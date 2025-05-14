@@ -59,6 +59,50 @@ jobs:
             echo "No development leftovers found."
           fi
 
+  build-assets:
+    name: Build Assets
+    runs-on: ubuntu-latest
+    needs:
+      - check-development-leftovers
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      -
+        name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: build/package-lock.json
+      -
+        name: Install dependencies
+        working-directory: build
+        run: npm ci
+      -
+        name: Build
+        working-directory: build
+        run: npm run prod
+      -
+        name: Check changes
+        id: check-changes
+        run: |
+          git add --all js
+          if git diff-index --name-status --exit-code HEAD js; then
+            echo 'No changes detected.'
+          else
+            echo 'Changes detected.'
+            echo 'commit=yes' >> $GITHUB_OUTPUT
+          fi
+      -
+        name: Commit changes
+        if: github.event_name == 'push' && steps.check-changes.outputs.commit == 'yes'
+        run: |
+          git config --local user.name 'GitHub Actions'
+          git config --local user.email noreply@github.com
+          git commit -m 'Update assets'
+          git push
+
   check-install:
     name: Install on Concrete ${{ matrix.ccm-version }}
     runs-on: ubuntu-latest
