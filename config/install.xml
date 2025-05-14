@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<concrete5-cif version="1.0">
+
+    <blocktypes>
+        <blocktype package="alert_popup" handle="alert_popup" />
+    </blocktypes>
+
+    <blocktypesets>
+        <blocktypeset handle="basic" name="Basic" package="alert_popup">
+            <blocktype handle="alert_popup" />
+        </blocktypeset>
+    </blocktypesets>
+
+</concrete5-cif>

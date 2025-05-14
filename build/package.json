@@ -1,0 +1,17 @@
+{
+  "name": "alert_popup",
+  "version": "1.0.0",
+  "author": "Michele Locati <michele@locati.it>",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "@types/jquery": "^3.5.32",
+    "esbuild": "^0.25.4",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "dev": "tsc",
+    "watch": "tsc --watch",
+    "prod": "tsc && esbuild --minify --outfile=../js/alert-popup.js --allow-overwrite ../js/alert-popup.js"
+  }
+}
