@@ -350,9 +350,9 @@ class Controller extends BlockController implements FileTrackableInterface
         $popupHtml .= ' class="ccm-alert-popup' . ($this->popupCssClass === '' ? '' : (' ' . h($this->popupCssClass))) . '"';
         $styles = [
             "background-color: {$this->popupBackgroundColor}",
-            'position: relative',
             "width: {$this->popupWidth}",
         ];
+        $innerStyles = [];
         if ($this->popupBorderWidth) {
             $styles[] = "border: solid {$this->popupBorderWidth}px {$this->popupBorderColor}";
         } else {
@@ -364,10 +364,8 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($this->popupMaxWidth) {
             $styles[] = "max-width: {$this->popupMaxWidth}px";
         }
-        if ($this->popupMaxHeight) {
-            $styles[] = "max-height: {$this->popupMaxHeight}px";
-        }
-        $popupHtml .= ' style="' . implode('; ', $styles) . '">' . $popupContent . '</dialog>';
+        $innerStyles[] = $this->popupMaxHeight ? "max-height: {$this->popupMaxHeight}px" : 'max-height: calc(100vh - 80px)';
+        $popupHtml .= ' style="' . implode('; ', $styles) . '"><div class="ccm-alert-popup-content" style="' . implode('; ', $innerStyles) . '">' . $popupContent . '</div></dialog>';
         $this->set('popupHtml', $popupHtml);
         $this->set('editMessages', $editMessages);
     }
