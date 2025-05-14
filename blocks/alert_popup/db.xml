@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema
+  xmlns="http://www.concrete5.org/doctrine-xml/0.5"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.concrete5.org/doctrine-xml/0.5 https://concretecms.github.io/doctrine-xml/doctrine-xml-0.5.xsd"
+>
+
+  <table name="btAlertPopup">
+    <field name="bID" type="integer">
+      <unsigned />
+      <key />
+    </field>
+
+    <field name="launcherType" type="string" size="15" comment="Type of the item to be clicked">
+        <notnull />
+    </field>
+    <field name="launcherText" type="string" size="255" comment="Text of the link to be clicked">
+        <notnull />
+    </field>
+    <field name="launcherImage" type="integer" comment="ID of the image to be clicked">
+        <unsigned />
+    </field>
+    <field name="launcherCssClass" type="string" size="255" comment="CSS classes for the link/image to be clicked">
+        <notnull />
+    </field>
+    <field name="popupWidth" type="string" size="20" comment="Width of the popup">
+        <notnull />
+    </field>
+    <field name="popupHeight" type="string" size="20" comment="Height of the popup">
+        <notnull />
+    </field>
+    <field name="popupMaxWidth" type="integer" comment="Max width (in pixels) of the popup">
+        <unsigned />
+    </field>
+    <field name="popupMaxHeight" type="integer" comment="Max height (in pixels) of the popup">
+        <unsigned />
+    </field>
+    <field name="popupBorderWidth" type="integer" comment="Width (in pixels) of the popup">
+        <unsigned />
+        <notnull />
+    </field>
+    <field name="popupBorderColor" type="string" size="50" comment="Color of the border of the popup">
+        <notnull />
+    </field>
+    <field name="popupBackgroundColor" type="string" size="50" comment="Color of the background of the popup">
+        <notnull />
+    </field>
+    <field name="popupCssClass" type="string" size="255" comment="CSS classes for the popup">
+        <notnull />
+    </field>
+    <field name="popupID" type="string" size="255" comment="Optional identifier of the popup">
+        <notnull />
+    </field>
+    <field name="popupContent" type="text" comment="Rich Text of the popup">
+        <notnull />
+    </field>
+  </table>
+
+</schema>
