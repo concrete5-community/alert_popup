@@ -49,27 +49,34 @@ function findDialogElement(query: HTMLElement|string|JQuery): HTMLDialogElement
 function createCloseButton(): HTMLElement
 {
     const button = document.createElement('div');
-    button.className = 'ccm-alertpopup-dialog-close';
-    button.style.position = 'absolute';
-    button.style.display = 'inline-block';
-    button.style.top = '0';
-    button.style.right = '0';
-    button.style.color = 'white';
-    button.style.backgroundColor = 'red';
-    button.style.border = 'none';
-    button.style.borderRadius = '0';
-    button.style.fontWeight = 'bold';
-    button.style.cursor = 'pointer';
-    button.style.margin = '0';
-    button.style.textAlign = 'center';
-    button.style.padding = '0px 2px 2px 2px';
-    button.style.margin = '0';
+    button.className = 'ccm-alert-popup-close';
+    button.style = [
+        'position: absolute',
+        'top: 0',
+        'right: 0',
+        'margin: 0',
+        'border: none',
+        'width: auto',
+        'height: auto',
+        'line-height: 1',
+        'font-size: 13px',
+        'text-align: center',
+        'text-decoration: none',
+        'display: inline-block',
+        'vertical-align: top',
+        'color: white',
+        'background-color: red',
+        'font-weight: bold',
+        'cursor: pointer',
+        'padding: 1px 2px 4px 4px',
+    ].join(';');
     button.innerText = '\ud83d\uddd9'; // CANCELLATION X
     return button;
 }
 class Popup
 {
     el: HTMLDialogElement;
+    contentEl: HTMLElement;
     clickListener: (e: MouseEvent) => void;
     closeListener: (e: Event) => void;
     closeButton: HTMLElement;
@@ -77,6 +84,23 @@ class Popup
     constructor(el: HTMLDialogElement)
     {
         this.el = el;
+        const contentEl = el.querySelector('.ccm-alert-popup-content');
+        if (!contentEl) {
+            throw new Error('No content element found in the dialog');
+        }
+        this.contentEl = contentEl as HTMLElement;
+
+        this.el.style.position = 'fixed';
+        this.el.style.display = 'block';
+        this.el.style.padding = '0';
+        this.el.style.margin = 'auto';
+        const pad = '18px';
+        this.contentEl.style.position = 'relative';
+        this.contentEl.style.margin = `${pad} 0 0 0`;
+        this.contentEl.style.padding = `0 ${pad} ${pad} ${pad}`;
+        this.contentEl.style.overflowX = 'visible';
+        this.contentEl.style.overflowY = 'auto';
+
         this.clickListener = (e: MouseEvent) => {
             if (e.target === this.el) {
                 this.close();
@@ -86,7 +110,7 @@ class Popup
             this.close();
         };
         this.closeButton = createCloseButton();
-        this.el.appendChild(this.closeButton);
+        this.el.prepend(this.closeButton);
         this.closeButton.addEventListener('click', (e: MouseEvent) => {
             e.stopPropagation();
             e.preventDefault();
@@ -116,14 +140,13 @@ class Popup
 
 function showAlertPopup(query: HTMLElement|string|JQuery): void
 {
-    let el: HTMLDialogElement;
     try {
-        el = findDialogElement(query);
+        const el = findDialogElement(query);
+        new Popup(el);
     } catch (e: any) {
         console.warn(e.message || e);
         return;
     }
-    new Popup(<HTMLDialogElement>el);
 }
 
 function hideTopmostPopup(): boolean
