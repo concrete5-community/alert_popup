@@ -2,15 +2,15 @@
 
 namespace Concrete\Package\AlertPopup\Block\AlertPopup;
 
-use Concrete\Core\Block\BlockController;
-use Concrete\Core\Error\UserMessageException;
-use Concrete\Core\File\Tracker\FileTrackableInterface;
 use Concrete\Core\Asset\AssetList;
-use Concrete\Core\Package\PackageService;
-use Concrete\Core\File\File;
+use Concrete\Core\Block\BlockController;
 use Concrete\Core\Editor\LinkAbstractor;
-use Concrete\Core\Utility\Service\Xml;
+use Concrete\Core\Error\UserMessageException;
+use Concrete\Core\File\File;
+use Concrete\Core\File\Tracker\FileTrackableInterface;
 use Concrete\Core\Localization\Localization;
+use Concrete\Core\Package\PackageService;
+use Concrete\Core\Utility\Service\Xml;
 
 class Controller extends BlockController implements FileTrackableInterface
 {
@@ -159,7 +159,7 @@ class Controller extends BlockController implements FileTrackableInterface
      * @var string|null
      */
     protected $popupBackgroundColor;
-    
+
     /**
      * CSS classes for the popup.
      *
@@ -377,12 +377,17 @@ class Controller extends BlockController implements FileTrackableInterface
      */
     public function getUsedFiles()
     {
-        $result = [];
-        if (($id = (int) $this->launcherImage) > 0) {
+        $result = static::getUsedFilesIn($this->popupContent);
+        if (($id = (int) $this->launcherImage) > 0 && !in_array($id, $result, true)) {
             $result[] = $id;
         }
 
         return $result;
+    }
+
+    public function getSearchableContent()
+    {
+        return $this->popupContent;
     }
 
     /**
@@ -577,5 +582,36 @@ class Controller extends BlockController implements FileTrackableInterface
         }
 
         return $errors->has() ? $errors : $normalized;
+    }
+
+    /**
+     * @param string|null $richText
+     *
+     * @return int[]
+     */
+    protected static function getUsedFilesIn($richText)
+    {
+        $result = [];
+        $matches = null;
+        if ($richText) {
+            if (preg_match_all('/\<concrete-picture[^>]*?fID\s*=\s*[\'"]([^\'"]*?)[\'"]/i', $richText, $matches)) {
+                foreach ($matches[1] as $id) {
+                    $id = (int) $id;
+                    if ($id > 0) {
+                        $result[] = $id;
+                    }
+                }
+            }
+            if (preg_match_all('(FID_DL_\d+)', $richText, $matches)) {
+                foreach ($matches[0] as $id) {
+                    $id = (int) $id;
+                    if ($id > 0) {
+                        $result[] = $id;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($result));
     }
 }
