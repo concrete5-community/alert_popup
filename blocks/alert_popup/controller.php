@@ -266,8 +266,22 @@ class Controller extends BlockController implements FileTrackableInterface
     public function registerViewAssets($outputContent = '')
     {
         $assetList = AssetList::getInstance();
-        if ($assetList->getAsset('javascript', 'alert-popup') === null) {
+        if (!array_key_exists('alert-popup', $assetList->getRegisteredAssetGroups())) {
             $pkg = $this->app->make(PackageService::class)->getByHandle('alert_popup');
+            $assetList->register(
+                // $assetType
+                'css',
+                // $assetHandle
+                'alert-popup',
+                // $filename
+                'assets/alert-popup.css',
+                [
+                    'version' => $pkg->getPackageVersion(),
+                    'minify' => false,
+                    'combine' => true,
+                ],
+                'alert_popup'
+            );
             $assetList->register(
                 // $assetType
                 'javascript',
@@ -282,8 +296,12 @@ class Controller extends BlockController implements FileTrackableInterface
                 ],
                 'alert_popup'
             );
+            $assetList->registerGroup('alert-popup', [
+                ['css', 'alert-popup'],
+                ['javascript', 'alert-popup'],
+            ]);
         }
-        $this->requireAsset('javascript', 'alert-popup');
+        $this->requireAsset('alert-popup');
     }
 
     public function view()
@@ -352,11 +370,9 @@ class Controller extends BlockController implements FileTrackableInterface
             "background-color: {$this->popupBackgroundColor}",
             "width: {$this->popupWidth}",
         ];
-        $innerStyles = [];
+        $contentStyles = [];
         if ($this->popupBorderWidth) {
             $styles[] = "border: solid {$this->popupBorderWidth}px {$this->popupBorderColor}";
-        } else {
-            $styles[] = 'border: none';
         }
         if ($this->popupHeight) {
             $styles[] = "height: {$this->popupHeight}";
@@ -364,8 +380,14 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($this->popupMaxWidth) {
             $styles[] = "max-width: {$this->popupMaxWidth}px";
         }
-        $innerStyles[] = $this->popupMaxHeight ? "max-height: {$this->popupMaxHeight}px" : 'max-height: calc(100vh - 80px)';
-        $popupHtml .= ' style="' . implode('; ', $styles) . '"><div class="ccm-alert-popup-content" style="' . implode('; ', $innerStyles) . '">' . $popupContent . '</div></dialog>';
+        if ($this->popupMaxHeight) {
+            $contentStyles[] = "max-height: {$this->popupMaxHeight}px";
+        }
+        $popupHtml .= ' style="' . implode('; ', $styles) . '"><div class="ccm-alert-popup-content"';
+        if ($contentStyles !== []) {
+            $popupHtml .= ' style="' . implode('; ', $contentStyles) . '"';
+        }
+        $popupHtml .= '>' . $popupContent . '</div></dialog>';
         $this->set('popupHtml', $popupHtml);
         $this->set('editMessages', $editMessages);
     }

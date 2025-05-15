@@ -1,0 +1,41 @@
+$ccm-alert-popup-padding: 18px;
+
+.ccm-alert-popup {
+    position: fixed;
+    padding: 0;
+    margin: auto;
+    border: none;
+
+    .ccm-alert-popup-close {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        border: none;
+        width: auto;
+        height: auto;
+        line-height: 1;
+        font-size: 13px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        vertical-align: top;
+        color: white;
+        background-color: red;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 1px 2px 4px 4px;
+    }
+
+    .ccm-alert-popup-content {
+        position: relative;
+        margin: $ccm-alert-popup-padding 0 0 0;
+        padding: 0 $ccm-alert-popup-padding $ccm-alert-popup-padding $ccm-alert-popup-padding;
+        overflow-x: visible;
+        overflow-y: auto;
+        max-height: calc(100vh - 80px);
+        & :last-child {
+            margin-bottom: 0;
+        }
+    }
+}

@@ -11,11 +11,20 @@
     "@types/jquery": "^3.5.32",
     "check-node-version": "^4.2.1",
     "esbuild": "^0.25.4",
+    "npm-run-all": "^4.1.5",
+    "sass": "^1.88.0",
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "dev": "check-node-version --package && tsc",
-    "watch": "check-node-version --package && tsc --watch",
-    "prod": "check-node-version --package && tsc && esbuild --minify --outfile=../assets/alert-popup.js --allow-overwrite ../assets/alert-popup.js"
+    "js:dev":    "npm run pre && tsc",
+    "js:watch":  "npm run pre && tsc --watch",
+    "js:prod":   "npm run pre && tsc         && esbuild --minify --outfile=../assets/alert-popup.js --allow-overwrite ../assets/alert-popup.js",
+    "css:dev":   "npm run pre && sass ./src/alert-popup.scss:../assets/alert-popup.css --no-source-map --no-error-css --load-path ../node_modules --style=expanded",
+    "css:watch": "npm run pre && sass ./src/alert-popup.scss:../assets/alert-popup.css --no-source-map --no-error-css --load-path ../node_modules --style=expanded --watch",
+    "css:prod":  "npm run pre && sass ./src/alert-popup.scss:../assets/alert-popup.css --no-source-map --no-error-css --load-path ../node_modules --style=compressed",
+    "dev": "npm-run-all js:dev css:dev",
+    "watch": "npm-run-all --parallel js:watch css:watch",
+    "prod": "npm-run-all js:prod css:prod",
+    "pre": "check-node-version --package"
   }
 }
