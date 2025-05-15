@@ -56,19 +56,31 @@ function createCloseButton(): HTMLElement
 class Popup
 {
     el: HTMLDialogElement;
+    animated: boolean;
     clickListener: (e: MouseEvent) => void;
+    cancelListener: (e: Event) => void;
     closeListener: (e: Event) => void;
     closeButton: HTMLElement;
     closed: boolean = false;
     constructor(el: HTMLDialogElement)
     {
         this.el = el;
+        this.animated = false;
+        this.el.classList.forEach((className) => {
+            if (className.startsWith('ccm-alert-popup-anim-')) {
+                this.animated = true;
+            }
+        });
         this.clickListener = (e: MouseEvent) => {
             if (e.target === this.el) {
                 this.close();
             }
         };
         this.closeListener = (e: Event) => {
+            this.close();
+        };
+        this.cancelListener = (e: Event) => {
+            e.preventDefault();
             this.close();
         };
         this.closeButton = createCloseButton();
@@ -80,8 +92,16 @@ class Popup
         });
         this.el.addEventListener('click', this.clickListener);
         this.el.addEventListener('close', this.closeListener);
-        this.el.showModal();
+        this.el.addEventListener('cancel', this.cancelListener);
         openPopups.push(this);
+        this.el.showModal();
+        if (this.animated) {
+            window.requestAnimationFrame(() => {
+                this.el.classList.add('ccm-alert-popup-open');
+            });
+        } else {
+            this.el.classList.add('ccm-alert-popup-open');
+        }
     }
     close(): void
     {
@@ -91,12 +111,20 @@ class Popup
         this.closed = true;
         this.el.removeEventListener('click', this.clickListener);
         this.el.removeEventListener('close', this.closeListener);
-        this.el.removeChild(this.closeButton);
-        this.el.style.display = 'none';
-        this.el.close();
-        const index = openPopups.indexOf(this);
-        if (index >= 0) {
-            openPopups.splice(index, 1);
+        const dispose = () => {
+            this.el.removeEventListener('cancel', this.cancelListener);
+            this.el.close();
+            this.el.removeChild(this.closeButton);
+            const index = openPopups.indexOf(this);
+            if (index >= 0) {
+                openPopups.splice(index, 1);
+            }
+        };
+        this.el.classList.remove('ccm-alert-popup-open');
+        if (this.animated) {
+            this.el.addEventListener('transitionend', () => dispose(), { once: true });
+        } else {
+            dispose();
         }
     }
 }
@@ -105,9 +133,12 @@ function showAlertPopup(query: HTMLElement|string|JQuery): void
 {
     try {
         const el = findDialogElement(query);
+        if (openPopups.some(popup => popup.el === el)) {
+            throw new Error('Popup is already open');
+        }
         new Popup(el);
     } catch (e: any) {
-        console.warn(e.message || e);
+        console.warn(e?.message || e || 'Unknown error');
         return;
     }
 }
