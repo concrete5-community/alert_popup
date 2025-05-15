@@ -7,6 +7,21 @@ function isJQuery(obj: any): obj is JQuery {
   return typeof obj === 'object' && obj !== null && typeof obj.jquery === 'string' && typeof obj.on === 'function';
 }
 
+function cssTimeToMillisecs(cssTime: string): number|null {
+    const match = cssTime.match(/^(\d+(\.(\d+))?)\s*(ms|s)$/);
+    if (!match) {
+        return null;
+    }
+    const value = parseFloat(match[1]);
+    const unit = match[4];
+    if (unit === 'ms') {
+        return value;
+    } else if (unit === 's') {
+        return value * 1000;
+    }
+    return null;
+}
+
 function findDialogElement(query: HTMLElement|string|JQuery): HTMLDialogElement
 {
     let el: HTMLElement | null = null;
@@ -62,6 +77,7 @@ class Popup
     closeListener: (e: Event) => void;
     closeButton: HTMLElement;
     closed: boolean = false;
+    revertTransitionProperty: string|undefined;
     constructor(el: HTMLDialogElement)
     {
         this.el = el;
@@ -98,6 +114,17 @@ class Popup
         if (this.animated) {
             window.requestAnimationFrame(() => {
                 this.el.classList.add('ccm-alert-popup-open');
+                const elStyle = window.getComputedStyle(this.el);
+                const transitionDuration = cssTimeToMillisecs(elStyle.transitionDuration);
+                if (transitionDuration === null) {
+                    console.warn('Invalid transition duration');
+                } else {
+                    this.revertTransitionProperty = elStyle.transitionProperty;
+                    setTimeout(
+                        () => this.el.style.transitionProperty = 'none',
+                        transitionDuration + 100
+                    );
+                }
             });
         } else {
             this.el.classList.add('ccm-alert-popup-open');
@@ -109,6 +136,9 @@ class Popup
             return;
         }
         this.closed = true;
+        if (this.revertTransitionProperty !== undefined) {
+            this.el.style.transitionProperty = this.revertTransitionProperty;
+        }
         this.el.removeEventListener('click', this.clickListener);
         this.el.removeEventListener('close', this.closeListener);
         const dispose = () => {
