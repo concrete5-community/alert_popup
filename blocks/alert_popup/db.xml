@@ -45,6 +45,9 @@
     <field name="popupBackgroundColor" type="string" size="50" comment="Color of the background of the popup">
         <notnull />
     </field>
+    <field name="popupAnimations" type="text" comment="List of popup animations">
+        <notnull />
+    </field>
     <field name="popupCssClass" type="string" size="255" comment="CSS classes for the popup">
         <notnull />
     </field>

@@ -161,6 +161,13 @@ class Controller extends BlockController implements FileTrackableInterface
     protected $popupBackgroundColor;
 
     /**
+     * List of popup animations.
+     *
+     * @var string|null
+     */
+    protected $popupAnimations;
+
+    /**
      * CSS classes for the popup.
      *
      * @var string|null
@@ -214,6 +221,7 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('popupBorderWidth', 5);
         $this->set('popupBorderColor', '#dddddd');
         $this->set('popupBackgroundColor', '#ffffff');
+        $this->set('popupAnimations', '');
         $this->set('popupCssClass', '');
         $this->set('popupID', '');
         $this->set('popupContent', '');
@@ -365,7 +373,15 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('launcherJS', 'if (window.ccmAlertPopup) window.ccmAlertPopup.show(' . json_encode($popupID) . '); return false');
         $popupHtml = '<dialog';
         $popupHtml .= ' id="' . h($popupID) . '"';
-        $popupHtml .= ' class="ccm-alert-popup' . ($this->popupCssClass === '' ? '' : (' ' . h($this->popupCssClass))) . '"';
+        $popupHtml .= ' class="ccm-alert-popup';
+        foreach (preg_split('/[^\w\-]/', $this->popupAnimations, -1, PREG_SPLIT_NO_EMPTY) as $animation) {
+            $popupHtml .= " ccm-alert-popup-anim-{$animation}";
+            
+        }
+        if ($this->popupCssClass !== '') {
+            $popupHtml .= ' ' . h($this->popupCssClass);
+        }
+        $popupHtml .= '"';
         $styles = [
             "background-color: {$this->popupBackgroundColor}",
             "width: {$this->popupWidth}",
@@ -500,6 +516,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBorderWidth' => '',
             'popupBorderColor' => '',
             'popupBackgroundColor' => '',
+            'popupAnimations' => '',
             'popupCssClass' => '',
             'popupID' => '',
             'popupContent' => '',
@@ -517,6 +534,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBorderWidth' => trim((string) $args['popupBorderWidth']),
             'popupBorderColor' => trim((string) $args['popupBorderColor']),
             'popupBackgroundColor' => trim((string) $args['popupBackgroundColor']),
+            'popupAnimations' => trim((string) $args['popupAnimations']),
             'popupID' => trim((string) $args['popupID']),
             'popupCssClass' => preg_replace('/\s+/',trim((string) $args['popupCssClass']), ' '),
             'popupContent' => LinkAbstractor::translateTo(trim((string) $args['popupContent'])),

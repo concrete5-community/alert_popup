@@ -24,6 +24,7 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var int $popupBorderWidth
  * @var string $popupBorderColor
  * @var string $popupBackgroundColor
+ * @var string $popupAnimations
  * @var string $popupCssClass
  * @var string $popupID
  * @var string $popupContent
@@ -50,6 +51,7 @@ ob_start();
     <?= $ui->tabs([
         ['alertpopup-editor-launcher', t('Launcher'), true],
         ['alertpopup-editor-popup', t('Popup')],
+        ['alertpopup-editor-animations', t('Animations')],
         ['alertpopup-editor-content', t('Content')],
         // ['alertpopup-editor-preview', t('Preview')],
     ]) ?>
@@ -222,6 +224,33 @@ ob_start();
             </div>
         </div>
 
+        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-animations">
+            <input type="hidden" name="popupAnimations" v-bind:value="popupAnimations" />
+            <div v-for="A in ANIMATIONS">
+                <?php
+                if (version_compare(APP_VERSION, '9') < 0) {
+                    ?>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" v-bind:value="A.key" v-model="selectedAnimations" />
+                            {{ A.name }}
+                        </label>
+                    </div>
+                    <?php
+                } else {
+                    ?>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" v-bind:value="A.key" v-bind:id="`alertpopup-editor-animation-${A.key}`" v-model="selectedAnimations" />
+                        <label class="form-check-label" v-bind:for="`alertpopup-editor-animation-${A.key}`">
+                            {{ A.name }}
+                        </label>
+                    </div>
+                    <?php
+                }
+                ?>
+            </div>
+        </div>
+
         <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-content">
             <?= $editor->outputBlockEditModeEditor('popupContent', $popupContent) ?>
         </div>
@@ -253,6 +282,20 @@ function launchApp() {
         el: '#ccm-alertpopup-editor',
         data() {
             return <?= json_encode([
+                'ANIMATIONS' => [
+                    [
+                        'key' => 'fade-in',
+                        'name' => t('Fade In'),
+                    ],
+                    [
+                        'key' => 'slide-in',
+                        'name' => t('Slide In'),
+                    ],
+                    [
+                        'key' => 'zoom-in',
+                        'name' => t('Zoom In'),
+                    ],
+                ],
                 'launcherType' => $launcherType,
                 'launcherContentType' => $launcherText === '' ? 'image' : 'text',
                 'launcherText' => $launcherText,
@@ -266,6 +309,7 @@ function launchApp() {
                 'popupBorderWidth' => $popupBorderWidth,
                 'popupBorderColor' => $popupBorderColor,
                 'popupBackgroundColor' => $popupBackgroundColor,
+                'selectedAnimations' => preg_split('/[^\w\-]/', $popupAnimations, -1, PREG_SPLIT_NO_EMPTY),
                 'popupCssClass' => $popupCssClass,
                 'popupID' => $popupID,
             ]) ?>;
@@ -302,6 +346,9 @@ function launchApp() {
             },
             popupHeight() {
                 return this.popupHeightValue ? `${this.popupHeightValue}${this.popupHeightUnit}` : '';
+            },
+            popupAnimations() {
+                return this.selectedAnimations.join(' ');
             },
         },
         methods: {
