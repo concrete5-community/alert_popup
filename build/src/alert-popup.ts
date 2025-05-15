@@ -1,6 +1,11 @@
 (function() {
 'use strict';
 
+if ((window as any).ccmAlertPopup?.show) {
+    console.warn('ccmAlertPopup is already defined');
+    return;
+}
+
 const openPopups: Popup[] = [];
 
 function isJQuery(obj: any): obj is JQuery {
@@ -199,6 +204,11 @@ Object.defineProperty(
             hide: {
                 value: hideTopmostPopup,
                 writable: false,
+                enumerable: true,
+                configurable: false,
+            },
+            isOpen: {
+                get: () => openPopups.length > 0,
                 enumerable: true,
                 configurable: false,
             },
