@@ -12,6 +12,6 @@
   "scripts": {
     "dev": "tsc",
     "watch": "tsc --watch",
-    "prod": "tsc && esbuild --minify --outfile=../js/alert-popup.js --allow-overwrite ../js/alert-popup.js"
+    "prod": "tsc && esbuild --minify --outfile=../assets/alert-popup.js --allow-overwrite ../assets/alert-popup.js"
   }
 }

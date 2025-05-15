@@ -274,7 +274,7 @@ class Controller extends BlockController implements FileTrackableInterface
                 // $assetHandle
                 'alert-popup',
                 // $filename
-                'js/alert-popup.js',
+                'assets/alert-popup.js',
                 [
                     'version' => $pkg->getPackageVersion(),
                     'minify' => false,
