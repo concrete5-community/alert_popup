@@ -4,14 +4,18 @@
   "author": "Michele Locati <michele@locati.it>",
   "license": "MIT",
   "description": "",
+  "engines": {
+    "node": "^22"
+  },
   "dependencies": {
     "@types/jquery": "^3.5.32",
+    "check-node-version": "^4.2.1",
     "esbuild": "^0.25.4",
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "dev": "tsc",
-    "watch": "tsc --watch",
-    "prod": "tsc && esbuild --minify --outfile=../js/alert-popup.js --allow-overwrite ../js/alert-popup.js"
+    "dev": "check-node-version --package && tsc",
+    "watch": "check-node-version --package && tsc --watch",
+    "prod": "check-node-version --package && tsc && esbuild --minify --outfile=../assets/alert-popup.js --allow-overwrite ../assets/alert-popup.js"
   }
 }

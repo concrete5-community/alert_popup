@@ -87,8 +87,8 @@ jobs:
         name: Check changes
         id: check-changes
         run: |
-          git add --all js
-          if git diff-index --name-status --exit-code HEAD js; then
+          git add --all assets
+          if git diff-index --name-status --exit-code HEAD assets; then
             echo 'No changes detected.'
           else
             echo 'Changes detected.'
