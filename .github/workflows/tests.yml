@@ -82,7 +82,7 @@ jobs:
       -
         name: Build
         working-directory: build
-        run: npm run prod
+        run: rm -rf assets && npm run prod
       -
         name: Check changes
         id: check-changes
