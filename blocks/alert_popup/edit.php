@@ -53,7 +53,6 @@ ob_start();
         ['alertpopup-editor-popup', t('Popup')],
         ['alertpopup-editor-animations', t('Animations')],
         ['alertpopup-editor-content', t('Content')],
-        // ['alertpopup-editor-preview', t('Preview')],
     ]) ?>
 
     <div class="tab-content">
@@ -256,6 +255,7 @@ ob_start();
         </div>
 
     </div>
+    <div v-html="popupPreview.html"></div>
 </div>
 <?php
 $template = ob_get_contents();
@@ -312,6 +312,11 @@ function launchApp() {
                 'selectedAnimations' => preg_split('/[^\w\-]/', $popupAnimations, -1, PREG_SPLIT_NO_EMPTY),
                 'popupCssClass' => $popupCssClass,
                 'popupID' => $popupID,
+                'popupPreview' => [
+                    'loading' => false,
+                    'params' => null,
+                    'html' => '',
+                ],
             ]) ?>;
         },
         mounted() {
@@ -339,6 +344,45 @@ function launchApp() {
                 <?php
             }
             ?>
+            const previewButton = document.createElement('button');
+            previewButton.textContent = <?= json_encode(t('Preview')) ?>;
+            previewButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                previewButton.disabled = true;
+                try {
+                    await this.showPreview();
+                } finally {
+                    previewButton.disabled = false;
+                }
+            });
+            <?php
+            if (version_compare(APP_VERSION, '9') < 0) {
+                ?>
+                previewButton.className = 'btn btn-default pull-right';
+                previewButton.style.marginRight = '1em';
+                setTimeout(
+                    () => this.$el.closest('.ui-dialog').querySelector('.ui-dialog-buttonpane .btn-primary').after(previewButton),
+                    100
+                );
+                <?php
+            } else {
+                ?>
+                previewButton.className = 'btn btn-success';
+                previewButton.style.marginRight = '1em';
+                setTimeout(
+                    () => this.$el.closest('.ui-dialog').querySelector('.ui-dialog-buttonpane .btn-primary').before(previewButton),
+                    100
+                );
+                <?php
+            }
+            ?>
+            $(this.$el.closest('.ui-dialog')).on('dialogbeforeclose', () => {
+                if (window.ccmAlertPopup.isOpen === true) {
+                    window.ccmAlertPopup.hide();
+                    previewButton.focus();
+                    return false;
+                }
+            });
         },
         computed: {
             popupWidth() {
@@ -384,7 +428,74 @@ function launchApp() {
                     },
                     true
                 );
-            }
+            },
+            preparePopupContent() {
+                const input = this.$el.closest('form').querySelector('[name="popupContent"]');
+                if (input) {
+                    if (window.CKEDITOR?.instances) {
+                        const ckEditor = window.CKEDITOR.instances[input.id];
+                        if (ckEditor) {
+                            ckEditor.updateElement();
+                        }
+                    }
+                }
+            },
+            async showPreview() {
+                if (this.popupPreview.loading) {
+                    return;
+                }
+                this.preparePopupContent();
+                const formData = new FormData(this.$el.closest('form'));
+                const formParams = new URLSearchParams(formData);
+                
+                //var editorData = CKEDITOR.instances.editor1.getData();
+                if (this.popupPreview.params !== formParams.toString()) {
+                    this.popupPreview.loading = true;
+                    try {
+                        const requestBody = new URLSearchParams(formData);
+                        requestBody.append('__ccm_consider_request_as_xhr', '1');
+                        requestBody.delete(<?= json_encode($token::DEFAULT_TOKEN_NAME) ?>);
+                        requestBody.append(<?= json_encode($token::DEFAULT_TOKEN_NAME) ?>, <?= json_encode($token->generate('ccm-alertpopup-preview')) ?>);
+                        const response = await window.fetch(
+                            <?= json_encode((string) $controller->getActionURL('generate_preview')) ?>,
+                            {
+                                headers: {
+                                    Accept: 'application/json',
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                method: 'POST',
+                                body: requestBody,
+                                cache: 'no-store',
+                            }
+                        );
+                        const responseText = await response.text();
+                        let responseData;
+                        try {
+                            responseData = JSON.parse(responseText);
+                        } catch (e) {
+                            throw new Error(responseText);
+                        }
+                        if (responseData.error === true && responseData.errors?.length) {
+                            throw new Error(responseData.errors.join('\n'));
+                        } else if (responseData.error) {
+                            throw new Error(responseData.error.message || responseData.error);
+                        }
+                        if (!response.ok || !responseData.popupHtml) {
+                            throw new Error(responseText);
+                        }
+                        this.popupPreview.html = responseData.popupHtml;
+                        this.popupPreview.params = formParams.toString();
+                        await this.$nextTick();
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (e) {
+                        ConcreteAlert.error({message: e?.message || e || <?= json_encode(t('Unknown error')) ?>});
+                        return;
+                    } finally {
+                        this.popupPreview.loading = false;
+                    }
+                }
+                ccmAlertPopup.show('ccm-alertpopup-popuppreview');
+            },
         },
     });
 }
