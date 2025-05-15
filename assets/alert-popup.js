@@ -1,1 +1,189 @@
-(function(){"use strict";const n=[];function o(e){return typeof e=="object"&&e!==null&&typeof e.jquery=="string"&&typeof e.on=="function"}function i(e){let t=null;if(e instanceof HTMLElement)t=e;else if(typeof e=="string"){if(e=e.replace(/^\s*#|\s+/,""),e==="")throw new Error("Empty selector string provided");const s=document.querySelectorAll(`#${e}`);switch(s.length){case 0:throw new Error(`No elements found for selector ${e}`);case 1:t=s[0];break;default:throw new Error(`Multiple elements found for selector ${e}`)}}else if(o(e))switch(e.length){case 0:throw new Error("The jQuery object doesn't contain any element");case 1:t=e[0];break;default:throw new Error("The jQuery object contains more than one elements")}else throw new Error("Invalid query type "+typeof e);if(t.tagName!=="DIALOG")throw new Error("Element is not a dialog, but a "+t.tagName);return t}function l(){const e=document.createElement("div");return e.className="ccm-alert-popup-close",e.innerText="\u{1F5D9}",e}class r{constructor(t){this.closed=!1,this.el=t,this.animated=!1,this.el.classList.forEach(s=>{s.startsWith("ccm-alert-popup-anim-")&&(this.animated=!0)}),this.clickListener=s=>{s.target===this.el&&this.close()},this.closeListener=s=>{this.close()},this.cancelListener=s=>{s.preventDefault(),this.close()},this.closeButton=l(),this.el.prepend(this.closeButton),this.closeButton.addEventListener("click",s=>{s.stopPropagation(),s.preventDefault(),this.close()}),this.el.addEventListener("click",this.clickListener),this.el.addEventListener("close",this.closeListener),this.el.addEventListener("cancel",this.cancelListener),n.push(this),this.el.showModal(),this.animated?window.requestAnimationFrame(()=>{this.el.classList.add("ccm-alert-popup-open")}):this.el.classList.add("ccm-alert-popup-open")}close(){if(this.closed)return;this.closed=!0,this.el.removeEventListener("click",this.clickListener),this.el.removeEventListener("close",this.closeListener);const t=()=>{this.el.removeEventListener("cancel",this.cancelListener),this.el.close(),this.el.removeChild(this.closeButton);const s=n.indexOf(this);s>=0&&n.splice(s,1)};this.el.classList.remove("ccm-alert-popup-open"),this.animated?this.el.addEventListener("transitionend",()=>t(),{once:!0}):t()}}function c(e){try{const t=i(e);if(n.some(s=>s.el===t))throw new Error("Popup is already open");new r(t)}catch(t){console.warn(t?.message||t||"Unknown error");return}}function a(){const e=n.pop();return e?(e.close(),!0):(console.warn("No open popups to hide"),!1)}Object.defineProperty(window,"ccmAlertPopup",{writable:!1,value:Object.defineProperties({},{show:{value:c,writable:!1,enumerable:!0,configurable:!1},hide:{value:a,writable:!1,enumerable:!0,configurable:!1}}),enumerable:!0,configurable:!1})})();
+(function () {
+    'use strict';
+    const openPopups = [];
+    function isJQuery(obj) {
+        return typeof obj === 'object' && obj !== null && typeof obj.jquery === 'string' && typeof obj.on === 'function';
+    }
+    function cssTimeToMillisecs(cssTime) {
+        const match = cssTime.match(/^(\d+(\.(\d+))?)\s*(ms|s)$/);
+        if (!match) {
+            return null;
+        }
+        const value = parseFloat(match[1]);
+        const unit = match[4];
+        if (unit === 'ms') {
+            return value;
+        }
+        else if (unit === 's') {
+            return value * 1000;
+        }
+        return null;
+    }
+    function findDialogElement(query) {
+        let el = null;
+        if (query instanceof HTMLElement) {
+            el = query;
+        }
+        else if (typeof query === 'string') {
+            query = query.replace(/^\s*#|\s+/, '');
+            if (query === '') {
+                throw new Error('Empty selector string provided');
+            }
+            const elements = document.querySelectorAll(`#${query}`);
+            switch (elements.length) {
+                case 0:
+                    throw new Error(`No elements found for selector ${query}`);
+                case 1:
+                    el = elements[0];
+                    break;
+                default:
+                    throw new Error(`Multiple elements found for selector ${query}`);
+            }
+        }
+        else if (isJQuery(query)) {
+            switch (query.length) {
+                case 0:
+                    throw new Error("The jQuery object doesn't contain any element");
+                case 1:
+                    el = query[0];
+                    break;
+                default:
+                    throw new Error('The jQuery object contains more than one elements');
+            }
+        }
+        else {
+            throw new Error('Invalid query type ' + typeof query);
+        }
+        if (el.tagName !== 'DIALOG') {
+            throw new Error('Element is not a dialog, but a ' + el.tagName);
+        }
+        return el;
+    }
+    function createCloseButton() {
+        const button = document.createElement('div');
+        button.className = 'ccm-alert-popup-close';
+        button.innerText = '\ud83d\uddd9'; // CANCELLATION X
+        return button;
+    }
+    class Popup {
+        constructor(el) {
+            this.closed = false;
+            this.el = el;
+            this.animated = false;
+            this.el.classList.forEach((className) => {
+                if (className.startsWith('ccm-alert-popup-anim-')) {
+                    this.animated = true;
+                }
+            });
+            this.clickListener = (e) => {
+                if (e.target === this.el) {
+                    this.close();
+                }
+            };
+            this.closeListener = (e) => {
+                this.close();
+            };
+            this.cancelListener = (e) => {
+                e.preventDefault();
+                this.close();
+            };
+            this.closeButton = createCloseButton();
+            this.el.prepend(this.closeButton);
+            this.closeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.close();
+            });
+            this.el.addEventListener('click', this.clickListener);
+            this.el.addEventListener('close', this.closeListener);
+            this.el.addEventListener('cancel', this.cancelListener);
+            openPopups.push(this);
+            this.el.showModal();
+            if (this.animated) {
+                window.requestAnimationFrame(() => {
+                    this.el.classList.add('ccm-alert-popup-open');
+                    const elStyle = window.getComputedStyle(this.el);
+                    const transitionDuration = cssTimeToMillisecs(elStyle.transitionDuration);
+                    if (transitionDuration === null) {
+                        console.warn('Invalid transition duration');
+                    }
+                    else {
+                        this.revertTransitionProperty = elStyle.transitionProperty;
+                        setTimeout(() => this.el.style.transitionProperty = 'none', transitionDuration + 100);
+                    }
+                });
+            }
+            else {
+                this.el.classList.add('ccm-alert-popup-open');
+            }
+        }
+        close() {
+            if (this.closed) {
+                return;
+            }
+            this.closed = true;
+            if (this.revertTransitionProperty !== undefined) {
+                this.el.style.transitionProperty = this.revertTransitionProperty;
+            }
+            this.el.removeEventListener('click', this.clickListener);
+            this.el.removeEventListener('close', this.closeListener);
+            const dispose = () => {
+                this.el.removeEventListener('cancel', this.cancelListener);
+                this.el.close();
+                this.el.removeChild(this.closeButton);
+                const index = openPopups.indexOf(this);
+                if (index >= 0) {
+                    openPopups.splice(index, 1);
+                }
+            };
+            this.el.classList.remove('ccm-alert-popup-open');
+            if (this.animated) {
+                this.el.addEventListener('transitionend', () => dispose(), { once: true });
+            }
+            else {
+                dispose();
+            }
+        }
+    }
+    function showAlertPopup(query) {
+        try {
+            const el = findDialogElement(query);
+            if (openPopups.some(popup => popup.el === el)) {
+                throw new Error('Popup is already open');
+            }
+            new Popup(el);
+        }
+        catch (e) {
+            console.warn((e === null || e === void 0 ? void 0 : e.message) || e || 'Unknown error');
+            return;
+        }
+    }
+    function hideTopmostPopup() {
+        const popup = openPopups.pop();
+        if (!popup) {
+            console.warn('No open popups to hide');
+            return false;
+        }
+        popup.close();
+        return true;
+    }
+    Object.defineProperty(window, 'ccmAlertPopup', {
+        writable: false,
+        value: Object.defineProperties({}, {
+            show: {
+                value: showAlertPopup,
+                writable: false,
+                enumerable: true,
+                configurable: false,
+            },
+            hide: {
+                value: hideTopmostPopup,
+                writable: false,
+                enumerable: true,
+                configurable: false,
+            },
+        }),
+        enumerable: true,
+        configurable: false,
+    });
+})();

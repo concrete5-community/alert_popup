@@ -59,7 +59,7 @@ $ccm-alert-popup-anim-duration: 0.6s;
     }
 
     &.ccm-alert-popup-anim-slide-in {
-        transform: translateX(200%);
+        transform: translateX(100vw);
         &.ccm-alert-popup-open {
             transform: translateX(0);
         }
@@ -73,7 +73,7 @@ $ccm-alert-popup-anim-duration: 0.6s;
     }
 
     &.ccm-alert-popup-anim-slide-in.ccm-alert-popup-anim-zoom-in {
-        transform: translateX(200%) scale(0);
+        transform: translateX(100vw) scale(0);
         &.ccm-alert-popup-open {
             transform: translateX(0) scale(1);
         }
