@@ -130,6 +130,7 @@ class Popup
         this.el.removeEventListener('click', this.clickListener);
         this.el.removeEventListener('close', this.closeListener);
         this.el.removeChild(this.closeButton);
+        this.el.style.display = 'none';
         this.el.close();
         const index = openPopups.indexOf(this);
         if (index >= 0) {
