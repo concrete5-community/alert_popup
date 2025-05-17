@@ -14,3 +14,5 @@ You can control these aspects of the modal:
 - option to animate the modal when it opens and closes
 
 The content of the dialog is rich text.
+
+You can preview how the dialog will appear while you edit the block (you don't have to edit the block, save it, and save the page in order to check how it will appear).
