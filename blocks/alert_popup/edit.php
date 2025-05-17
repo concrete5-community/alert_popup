@@ -153,7 +153,7 @@ ob_start();
                                 '',
                                 ['v-model' => 'popupMaxWidth', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('width', 'Empty - none')]
                             ) ?>
-                            <span class="input-group-addon"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
                         </div>
                     </div>
                 </div>
@@ -166,7 +166,7 @@ ob_start();
                                 '',
                                 ['v-model' => 'popupMaxHeight', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('height', 'Empty - none')]
                             ) ?>
-                            <span class="input-group-addon"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
                         </div>
                     </div>
                 </div>
@@ -181,7 +181,7 @@ ob_start();
                                 '',
                                 ['v-model' => 'popupBorderWidth', 'min' => '0', 'max' => '999', 'required' => 'required']
                             ) ?>
-                            <span class="input-group-addon"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
                         </div>
                     </div>
                 </div>
