@@ -73,6 +73,11 @@ function createCloseButton(): HTMLElement
     button.innerText = '\ud83d\uddd9'; // CANCELLATION X
     return button;
 }
+
+interface Options { 
+    closed?: () => void;
+};
+
 class Popup
 {
     el: HTMLDialogElement;
@@ -83,9 +88,11 @@ class Popup
     closeButton: HTMLElement;
     closed: boolean = false;
     revertTransitionProperty: string|undefined;
-    constructor(el: HTMLDialogElement)
+    options?: Options;
+    constructor(el: HTMLDialogElement, options?: Options)
     {
         this.el = el;
+        this.options = options;
         this.animated = false;
         this.el.classList.forEach((className) => {
             if (className.startsWith('ccm-alert-popup-anim-')) {
@@ -154,6 +161,7 @@ class Popup
             if (index >= 0) {
                 openPopups.splice(index, 1);
             }
+            this.options?.closed?.();
         };
         this.el.classList.remove('ccm-alert-popup-open');
         if (this.animated) {
@@ -164,14 +172,14 @@ class Popup
     }
 }
 
-function showAlertPopup(query: HTMLElement|string|JQuery): void
+function showAlertPopup(query: HTMLElement|string|JQuery, options?: Options): void
 {
     try {
         const el = findDialogElement(query);
         if (openPopups.some(popup => popup.el === el)) {
             throw new Error('Popup is already open');
         }
-        new Popup(el);
+        new Popup(el, options);
     } catch (e: any) {
         console.warn(e?.message || e || 'Unknown error');
         return;
