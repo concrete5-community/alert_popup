@@ -10,7 +10,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'alert_popup';
 
-    protected $pkgVersion = '1.2.1';
+    protected $pkgVersion = '1.2.2';
 
     /**
      * {@inheritdoc}
