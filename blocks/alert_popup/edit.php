@@ -255,7 +255,6 @@ ob_start();
         </div>
 
     </div>
-    <div v-html="popupPreview.html"></div>
 </div>
 <?php
 $template = ob_get_contents();
@@ -440,6 +439,13 @@ function launchApp() {
                     }
                 }
             },
+            getPopupPreviewParent() {
+                const ccmPages = document.querySelectorAll('.ccm-page');
+                if (ccmPages.length > 0) {
+                    return ccmPages[0];
+                }
+                return document.body;
+            },
             async showPreview() {
                 if (this.popupPreview.loading) {
                     return;
@@ -485,8 +491,6 @@ function launchApp() {
                         }
                         this.popupPreview.html = responseData.popupHtml;
                         this.popupPreview.params = formParams.toString();
-                        await this.$nextTick();
-                        await new Promise(resolve => setTimeout(resolve, 100));
                     } catch (e) {
                         ConcreteAlert.error({message: e?.message || e || <?= json_encode(t('Unknown error')) ?>});
                         return;
@@ -494,7 +498,14 @@ function launchApp() {
                         this.popupPreview.loading = false;
                     }
                 }
-                ccmAlertPopup.show('ccm-alertpopup-popuppreview');
+                const popupContainer = document.createElement('div');
+                popupContainer.innerHTML = this.popupPreview.html;
+                this.getPopupPreviewParent().appendChild(popupContainer);
+                window.ccmAlertPopup.show('ccm-alertpopup-popuppreview', {
+                    closed: () => {
+                        popupContainer.remove();
+                    },
+                });
             },
         },
     });
