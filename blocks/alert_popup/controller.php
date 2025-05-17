@@ -172,6 +172,13 @@ class Controller extends BlockController implements FileTrackableInterface
     protected $popupBackgroundColor;
 
     /**
+     * Color of the backdrop of the popup.
+     *
+     * @var string|null
+     */
+    protected $popupBackdropColor;
+
+    /**
      * List of popup animations.
      *
      * @var string|null
@@ -232,6 +239,7 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('popupBorderWidth', 5);
         $this->set('popupBorderColor', '#dddddd');
         $this->set('popupBackgroundColor', '#ffffff');
+        $this->set('popupBackdropColor', '');
         $this->set('popupAnimations', '');
         $this->set('popupCssClass', '');
         $this->set('popupID', '');
@@ -613,6 +621,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBorderWidth' => '',
             'popupBorderColor' => '',
             'popupBackgroundColor' => '',
+            'popupBackdropColor' => '',
             'popupAnimations' => '',
             'popupCssClass' => '',
             'popupContent' => '',
@@ -625,6 +634,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBorderWidth' => trim((string) $args['popupBorderWidth']),
             'popupBorderColor' => trim((string) $args['popupBorderColor']),
             'popupBackgroundColor' => trim((string) $args['popupBackgroundColor']),
+            'popupBackdropColor' => trim((string) $args['popupBackdropColor']),
             'popupAnimations' => trim((string) $args['popupAnimations']),
             'popupCssClass' => preg_replace('/\s+/',trim((string) $args['popupCssClass']), ' '),
             'popupContent' => LinkAbstractor::translateTo(trim((string) $args['popupContent'])),
@@ -695,7 +705,7 @@ class Controller extends BlockController implements FileTrackableInterface
         $styles = [
             "background-color: {$data->popupBackgroundColor}",
             "width: {$data->popupWidth}",
-            ];
+        ];
         $contentStyles = [];
         if ($data->popupBorderWidth) {
             $styles[] = "border: solid {$data->popupBorderWidth}px {$data->popupBorderColor}";
@@ -709,7 +719,11 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($data->popupMaxHeight) {
             $contentStyles[] = "max-height: {$data->popupMaxHeight}px";
         }
-        $popupHtml .= ' style="' . implode('; ', $styles) . '"><div class="ccm-alert-popup-content"';
+        $popupHtml .= ' style="' . implode('; ', $styles) . '"';
+        if ($data->popupBackdropColor !== '') {
+            $popupHtml .= ' data-backdrop-color="' . h($data->popupBackdropColor) . '"';
+        }
+        $popupHtml .= '><div class="ccm-alert-popup-content"';
         if ($contentStyles !== []) {
             $popupHtml .= ' style="' . implode('; ', $contentStyles) . '"';
         }
