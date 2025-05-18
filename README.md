@@ -11,6 +11,7 @@ You can control these aspects of the modal:
 - width and maximum width
 - height and maximum height
 - border size and color
+- backdrop color and opacity
 - option to animate the modal when it opens and closes
 
 The content of the dialog is rich text.

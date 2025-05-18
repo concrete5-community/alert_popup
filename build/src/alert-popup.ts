@@ -74,6 +74,23 @@ function createCloseButton(): HTMLElement
     return button;
 }
 
+function createStyleElement(el: HTMLDialogElement): HTMLStyleElement|null
+{
+    const id = el.id;
+    const ruleLines: string[] = [];
+    if (el.dataset?.backdropColor) {
+        ruleLines.push(`dialog#${id}::backdrop { background-color: ${el.dataset.backdropColor}; }`);
+    }
+    if (ruleLines.length === 0) {
+        return null;
+    }
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = ruleLines.join('\n');
+    (document.head || document.body).appendChild(style);
+    return style;
+}
+
 interface Options { 
     closed?: () => void;
 };
@@ -89,6 +106,7 @@ class Popup
     closed: boolean = false;
     revertTransitionProperty: string|undefined;
     options?: Options;
+    styleElement: HTMLStyleElement|null;
     constructor(el: HTMLDialogElement, options?: Options)
     {
         this.el = el;
@@ -122,6 +140,7 @@ class Popup
         this.el.addEventListener('close', this.closeListener);
         this.el.addEventListener('cancel', this.cancelListener);
         openPopups.push(this);
+        this.styleElement = createStyleElement(this.el);
         this.el.showModal();
         if (this.animated) {
             window.requestAnimationFrame(() => {
@@ -160,6 +179,9 @@ class Popup
             const index = openPopups.indexOf(this);
             if (index >= 0) {
                 openPopups.splice(index, 1);
+            }
+            if (this.styleElement) {
+                this.styleElement.parentElement!.removeChild(this.styleElement);
             }
             this.options?.closed?.();
         };

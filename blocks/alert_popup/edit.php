@@ -24,6 +24,7 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var int $popupBorderWidth
  * @var string $popupBorderColor
  * @var string $popupBackgroundColor
+ * @var string $popupBackdropColor
  * @var string $popupAnimations
  * @var string $popupCssClass
  * @var string $popupID
@@ -33,6 +34,7 @@ defined('C5_EXECUTE') or die('Access Denied.');
 $monoStyle = 'font-family: Menlo, Monaco, Consolas, \'Courier New\', monospace;';
 $tabsPrefix = version_compare(APP_VERSION, '9') < 0 ? 'ccm-tab-content-' : '';
 $twoInputGroupsStyle = version_compare(APP_VERSION, '9') < 0 ? ['style' => 'width: 50%'] : [];
+$inputRangeStyle = version_compare(APP_VERSION, '9') < 0 ? ['style' => 'padding: 0'] : [];
 
 $matches = null;
 
@@ -50,7 +52,8 @@ ob_start();
 
     <?= $ui->tabs([
         ['alertpopup-editor-launcher', t('Launcher'), true],
-        ['alertpopup-editor-popup', t('Popup')],
+        ['alertpopup-editor-popupsize', t('Size')],
+        ['alertpopup-editor-appearance', t('Appearance')],
         ['alertpopup-editor-animations', t('Animations')],
         ['alertpopup-editor-content', t('Content')],
     ]) ?>
@@ -100,9 +103,20 @@ ob_start();
                     <?= $form->text('launcherCssClass', '', ['v-model.trim' => 'launcherCssClass', 'maxlength' => '255', 'pattern' => '\s*-?[_a-zA-Z]+[_a-zA-Z0-9\-]*(\s+-?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*\s*', 'style' => $monoStyle]) ?>
                 </div>
             </div>
+            <div class="form-group">
+                <?= $form->label('popupID', t('ID of the popup')) ?>
+                <?= $form->text('popupID', '', ['v-model.trim' => 'popupID', 'maxlength' => '255', 'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)), 'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*']) ?>
+                <div class="small text-muted">
+                    <?= t("Required if the type of the launcher is set to '%s'", tc('Launcher', 'None')) ?>
+                </div>
+                <div class="small text-muted" v-bind:style="{visibility: popupID === '' ? 'hidden' : 'visible'}">
+                    <?= t('Example:') ?><br />
+                    <code>&lt;a href=&quot;#&quot; onclick=&quot;ccmAlertPopup.show('{{ popupID }}'); return false&quot;&gt;<?= t('Show Popup') ?>&lt;/a&gt;</code>
+                </div>
+            </div>
         </div>
 
-        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-popup">
+        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-popupsize">
             <input type="hidden" name="popupWidth" v-bind:value="popupWidth" />
             <input type="hidden" name="popupHeight" v-bind:value="popupHeight" />
             <div class="row">
@@ -171,6 +185,9 @@ ob_start();
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-appearance">
             <div class="row">
                 <div class="col-6 col-sm-6">
                     <div class="form-group">
@@ -210,17 +227,25 @@ ob_start();
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <?= $form->label('popupID', t('ID of the popup')) ?>
-                <?= $form->text('popupID', '', ['v-model.trim' => 'popupID', 'maxlength' => '255', 'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)), 'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*']) ?>
-                <div class="small text-muted">
-                    <?= t("Required if the type of the launcher is set to '%s'", tc('Launcher', 'None')) ?>
+            <div class="row">
+                <div class="col-6 col-sm-6">
+                    <?= $form->label('popupBackdropColorRGB', t('Backdrop Color')) ?>
+                    <?= $form->color(
+                        'popupBackdropColorRGB',
+                        '',
+                        ['v-model' => 'popupBackdropColorRGB', 'required' => 'required']
+                    ) ?>
                 </div>
-                <div class="small text-muted" v-bind:style="{visibility: popupID === '' ? 'hidden' : 'visible'}">
-                    <?= t('Example:') ?><br />
-                    <code>&lt;a href=&quot;#&quot; onclick=&quot;ccmAlertPopup.show('{{ popupID }}'); return false&quot;&gt;<?= t('Show Popup') ?>&lt;/a&gt;</code>
+                <div class="col-6 col-sm-6">
+                    <?= $form->label('popupBackdropColorAlpha', t('Backdrop Opacity') . ' ({{ popupBackdropColorAlpha }})</span>') ?>
+                    <?= $form->range(
+                        'popupBackdropColorAlpha',
+                        '',
+                        ['v-model' => 'popupBackdropColorAlpha', 'min' => '0', 'max' => '100', 'step' => '1', 'required' => 'required'] + $inputRangeStyle
+                    ) ?>
                 </div>
             </div>
+            <input type="hidden" name="popupBackdropColor" v-bind:value="popupBackdropColor" />
         </div>
 
         <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-animations">
@@ -308,6 +333,8 @@ function launchApp() {
                 'popupBorderWidth' => $popupBorderWidth,
                 'popupBorderColor' => $popupBorderColor,
                 'popupBackgroundColor' => $popupBackgroundColor,
+                'popupBackdropColorRGB' => preg_match('/^#[0-9a-f]{8}$/i', $popupBackdropColor) ? substr($popupBackdropColor, 0, 7) : '#000000',
+                'popupBackdropColorAlpha' => preg_match('/^#[0-9a-f]{8}$/i', $popupBackdropColor) ? round(100 * hexdec(substr($popupBackdropColor, 7, 2)) / 255) : 10,
                 'selectedAnimations' => preg_split('/[^\w\-]/', $popupAnimations, -1, PREG_SPLIT_NO_EMPTY),
                 'popupCssClass' => $popupCssClass,
                 'popupID' => $popupID,
@@ -392,6 +419,13 @@ function launchApp() {
             },
             popupAnimations() {
                 return this.selectedAnimations.join(' ');
+            },
+            popupBackdropColor() {
+                const alpha = Number(this.popupBackdropColorAlpha);
+                if (!/^#[0-9a-f]{6}$/i.test(this.popupBackdropColorRGB) || isNaN(alpha) || alpha < 0 || alpha > 100) {
+                    return '';
+                }
+                return this.popupBackdropColorRGB + ('00' + Math.round(255 * alpha / 100).toString(16)).slice(-2);
             },
         },
         methods: {
