@@ -17,8 +17,10 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var string $popupContent
  * @var string $popupCssClass
  * @var string $popupWidth
+ * @var int|null $popupMinWidth
  * @var int|null $popupMaxWidth
  * @var string $popupHeight
+ * @var int|null $popupMinHeight
  * @var int|null $popupMaxHeight
  *
  * @var Concrete\Core\Localization\Localization $localization

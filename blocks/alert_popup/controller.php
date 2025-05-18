@@ -130,11 +130,11 @@ class Controller extends BlockController implements FileTrackableInterface
     protected $popupWidth;
 
     /**
-     * Height of the popup.
+     * Min width (in pixels) of the popup.
      *
-     * @var string|null
+     * @var int|string|null
      */
-    protected $popupHeight;
+    protected $popupMinWidth;
 
     /**
      * Max width (in pixels) of the popup.
@@ -142,6 +142,22 @@ class Controller extends BlockController implements FileTrackableInterface
      * @var int|string|null
      */
     protected $popupMaxWidth;
+
+
+    /**
+     * Height of the popup.
+     *
+     * @var string|null
+     */
+    protected $popupHeight;
+
+
+    /**
+     * Min height (in pixels) of the popup.
+     *
+     * @var int|string|null
+     */
+    protected $popupMinHeight;
 
     /**
      * Max height (in pixels) of the popup.
@@ -233,8 +249,10 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('launcherImage', null);
         $this->set('launcherCssClass', '');
         $this->set('popupWidth', '67vw');
-        $this->set('popupHeight', '');
+        $this->set('popupMinWidth', 200);
         $this->set('popupMaxWidth', 600);
+        $this->set('popupHeight', '');
+        $this->set('popupMinHeight', 100);
         $this->set('popupMaxHeight', 500);
         $this->set('popupBorderWidth', 5);
         $this->set('popupBorderColor', '#dddddd');
@@ -250,7 +268,9 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         $this->prepareEditUI();
         $this->set('launcherImage', ((int) $this->launcherImage) ?: null);
+        $this->set('popupMinWidth', ((int) $this->popupMinWidth) ?: null);
         $this->set('popupMaxWidth', ((int) $this->popupMaxWidth) ?: null);
+        $this->set('popupMinHeight', ((int) $this->popupMinHeight) ?: null);
         $this->set('popupMaxHeight', ((int) $this->popupMaxHeight) ?: null);
         $this->set('popupBorderWidth', (int) $this->popupBorderWidth);
         if ($this->popupBorderColor === '') {
@@ -308,7 +328,9 @@ class Controller extends BlockController implements FileTrackableInterface
                 $localization->setActiveContext($originalContext);
             }
         };
+        $this->set('popupMinWidth', $this->popupMinWidth ? (int) $this->popupMinWidth : null);
         $this->set('popupMaxWidth', $this->popupMaxWidth ? (int) $this->popupMaxWidth : null);
+        $this->set('popupMinHeight', $this->popupMinHeight ? (int) $this->popupMinHeight : null);
         $this->set('popupMaxHeight', $this->popupMaxHeight ? (int) $this->popupMaxHeight : null);
         $this->set('popupBorderWidth', (int) $this->popupBorderWidth);
         $popupContent = LinkAbstractor::translateFrom($this->popupContent);
@@ -615,8 +637,10 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         $args += [
             'popupWidth' => '',
-            'popupHeight' => '',
+            'popupMinWidth' => '',
             'popupMaxWidth' => '',
+            'popupHeight' => '',
+            'popupMinHeight' => '',
             'popupMaxHeight' => '',
             'popupBorderWidth' => '',
             'popupBorderColor' => '',
@@ -628,8 +652,10 @@ class Controller extends BlockController implements FileTrackableInterface
         ];
         $normalized = [
             'popupWidth' => trim((string) $args['popupWidth']),
-            'popupHeight' => trim((string) $args['popupHeight']),
+            'popupMinWidth' => trim((string) $args['popupMinWidth']),
             'popupMaxWidth' => trim((string) $args['popupMaxWidth']),
+            'popupHeight' => trim((string) $args['popupHeight']),
+            'popupMinHeight' => trim((string) $args['popupMinHeight']),
             'popupMaxHeight' => trim((string) $args['popupMaxHeight']),
             'popupBorderWidth' => trim((string) $args['popupBorderWidth']),
             'popupBorderColor' => trim((string) $args['popupBorderColor']),
@@ -644,15 +670,29 @@ class Controller extends BlockController implements FileTrackableInterface
         } elseif (!preg_match('/^(100|([1-9][0-9]?))vw$/', $normalized['popupWidth']) && !preg_match('/^[1-9]\d{0,9}px$/', $normalized['popupWidth'])) {
             $errors->add(t('Invalid width of the popup'));
         }
+        if ($normalized['popupMinWidth'] === '') {
+            $normalized['popupMinWidth'] = null;
+        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMinWidth'])) {
+            $errors->add(t('Invalid minimum width of the popup'));
+        } else {
+            $normalized['popupMinWidth'] = (int) $normalized['popupMinWidth'];
+        }
         if ($normalized['popupMaxWidth'] === '') {
             $normalized['popupMaxWidth'] = null;
         } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMaxWidth'])) {
-            $errors->add(t('Invalid maximum height of the popup'));
+            $errors->add(t('Invalid maximum width of the popup'));
         } else {
             $normalized['popupMaxWidth'] = (int) $normalized['popupMaxWidth'];
         }
         if ($normalized['popupHeight'] !== '' && (!preg_match('/^(100|([1-9][0-9]?))vh$/', $normalized['popupHeight']) && !preg_match('/^[1-9]\d{0,9}px$/', $normalized['popupHeight']))) {
             $errors->add(t('Invalid height of the popup'));
+        }
+        if ($normalized['popupMinHeight'] === '') {
+            $normalized['popupMinHeight'] = null;
+        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMinHeight'])) {
+            $errors->add(t('Invalid minimum height of the popup'));
+        } else {
+            $normalized['popupMinHeight'] = (int) $normalized['popupMinHeight'];
         }
         if ($normalized['popupMaxHeight'] === '') {
             $normalized['popupMaxHeight'] = null;
@@ -713,8 +753,14 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($data->popupHeight) {
             $styles[] = "height: {$data->popupHeight}";
         }
+        if ($data->popupMinWidth) {
+            $styles[] = "min-width: {$data->popupMinWidth}px";
+        }
         if ($data->popupMaxWidth) {
             $styles[] = "max-width: {$data->popupMaxWidth}px";
+        }
+        if ($data->popupMinHeight) {
+            $contentStyles[] = "min-height: {$data->popupMinHeight}px";
         }
         if ($data->popupMaxHeight) {
             $contentStyles[] = "max-height: {$data->popupMaxHeight}px";

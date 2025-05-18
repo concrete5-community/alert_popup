@@ -26,10 +26,16 @@
     <field name="popupWidth" type="string" size="20" comment="Width of the popup">
         <notnull />
     </field>
+    <field name="popupMinWidth" type="integer" comment="Min width (in pixels) of the popup">
+        <unsigned />
+    </field>
+    <field name="popupMaxWidth" type="integer" comment="Max width (in pixels) of the popup">
+        <unsigned />
+    </field>
     <field name="popupHeight" type="string" size="20" comment="Height of the popup">
         <notnull />
     </field>
-    <field name="popupMaxWidth" type="integer" comment="Max width (in pixels) of the popup">
+    <field name="popupMinHeight" type="integer" comment="Min height (in pixels) of the popup">
         <unsigned />
     </field>
     <field name="popupMaxHeight" type="integer" comment="Max height (in pixels) of the popup">
