@@ -18,8 +18,10 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var int|null $launcherImage
  * @var string $launcherCssClass
  * @var string $popupWidth
- * @var string $popupHeight
+ * @var int|null $popupMinWidth
  * @var int|null $popupMaxWidth
+ * @var string $popupHeight
+ * @var int|null $popupMinHeight
  * @var int|null $popupMaxHeight
  * @var int $popupBorderWidth
  * @var string $popupBorderColor
@@ -153,6 +155,34 @@ ob_start();
                                 '',
                                 ['v-model' => 'popupHeightUnit', 'required' => 'required'] + $twoInputGroupsStyle
                             ) ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6 col-sm-6">
+                    <div class="form-group">
+                        <?= $form->label('popupMinWidth', t('Minimum Width')) ?>
+                        <div class="input-group">
+                            <?= $form->number(
+                                'popupMinWidth',
+                                '',
+                                ['v-model' => 'popupMinWidth', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('width', 'Empty - none')]
+                            ) ?>
+                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6">
+                    <div class="form-group">
+                        <?= $form->label('popupMinHeight', t('Minimum Height')) ?>
+                        <div class="input-group">
+                            <?= $form->number(
+                                'popupMinHeight',
+                                '',
+                                ['v-model' => 'popupMinHeight', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('height', 'Empty - none')]
+                            ) ?>
+                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
                         </div>
                     </div>
                 </div>
@@ -326,9 +356,11 @@ function launchApp() {
                 'launcherCssClass' => $launcherCssClass,
                 'popupWidthValue' => $popupWidthValue,
                 'popupWidthUnit' => $popupWidthUnit,
+                'popupMinWidth' => $popupMinWidth,
+                'popupMaxWidth' => $popupMaxWidth,
                 'popupHeightValue' => $popupHeightValue,
                 'popupHeightUnit' => $popupHeightUnit,
-                'popupMaxWidth' => $popupMaxWidth,
+                'popupMinHeight' => $popupMinHeight,
                 'popupMaxHeight' => $popupMaxHeight,
                 'popupBorderWidth' => $popupBorderWidth,
                 'popupBorderColor' => $popupBorderColor,

@@ -8,8 +8,8 @@ The dialog can be opened by a button or a link (you can specify text or an image
 
 You can control these aspects of the modal:
 
-- width and maximum width
-- height and maximum height
+- width and minimum/maximum width
+- height and minimum/maximum height
 - border size and color
 - backdrop color and opacity
 - option to animate the modal when it opens and closes
