@@ -731,53 +731,47 @@ class Controller extends BlockController implements FileTrackableInterface
      */
     private static function generatePopupHtml($data, $popupID, $popupContent = null)
     {
-        $popupHtml = '<dialog';
-        $popupHtml .= ' id="' . h($popupID) . '"';
-        $popupHtml .= ' class="ccm-alert-popup';
+        $popupClasses = [];
+        $popupStyles = [];
+        $popupContentStyles = [];
+        $popupClasses[] = 'ccm-alert-popup';
         foreach (preg_split('/[^\w\-]/', $data->popupAnimations, -1, PREG_SPLIT_NO_EMPTY) as $animation) {
-            $popupHtml .= " ccm-alert-popup-anim-{$animation}";
-            
+            $popupClasses[] = "ccm-alert-popup-anim-{$animation}";
         }
         if ($data->popupCssClass !== '') {
-            $popupHtml .= ' ' . h($data->popupCssClass);
+            $popupClasses[] = h($data->popupCssClass);
         }
-        $popupHtml .= '"';
-        $styles = [
-            "background-color: {$data->popupBackgroundColor}",
-            "width: {$data->popupWidth}",
-        ];
-        $contentStyles = [];
         if ($data->popupBorderWidth) {
-            $styles[] = "border: solid {$data->popupBorderWidth}px {$data->popupBorderColor}";
+            $popupStyles[] = "border: solid {$data->popupBorderWidth}px {$data->popupBorderColor}";
         }
-        if ($data->popupHeight) {
-            $styles[] = "height: {$data->popupHeight}";
-        }
+        $popupStyles[] = "background-color: {$data->popupBackgroundColor}";
+        $popupStyles[] = "width: {$data->popupWidth}";
         if ($data->popupMinWidth) {
-            $styles[] = "min-width: {$data->popupMinWidth}px";
+            $popupStyles[] = "min-width: {$data->popupMinWidth}px";
         }
         if ($data->popupMaxWidth) {
-            $styles[] = "max-width: {$data->popupMaxWidth}px";
+            $popupStyles[] = "max-width: {$data->popupMaxWidth}px";
+        }
+        if ($data->popupHeight) {
+            $popupContentStyles[] = "height: calc({$data->popupHeight} - 19px)";
         }
         if ($data->popupMinHeight) {
-            $contentStyles[] = "min-height: {$data->popupMinHeight}px";
+            $popupContentStyles[] = "min-height: calc({$data->popupMinHeight}px - 19px)";
         }
         if ($data->popupMaxHeight) {
-            $contentStyles[] = "max-height: {$data->popupMaxHeight}px";
+            $popupContentStyles[] = "max-height: calc({$data->popupMaxHeight}px - 19px)";
         }
-        $popupHtml .= ' style="' . implode('; ', $styles) . '"';
-        if ($data->popupBackdropColor !== '') {
-            $popupHtml .= ' data-backdrop-color="' . h($data->popupBackdropColor) . '"';
+        if (!$data->popupHeight && !$data->popupMaxHeight) {
+            $popupContentStyles[] = 'max-height: calc(100vh - 12px)';
         }
-        $popupHtml .= '><div class="ccm-alert-popup-content"';
-        if ($contentStyles !== []) {
-            $popupHtml .= ' style="' . implode('; ', $contentStyles) . '"';
-        }
-        $popupHtml .= '>';
         if ($popupContent === null) {
             $popupContent = LinkAbstractor::translateFrom($data->popupContent);
         }
-        $popupHtml .= $popupContent . '</div></dialog>';
+        $popupHtml = '<dialog id="' . h($popupID) . '" class="' . implode(' ', $popupClasses) . '" style="' . implode('; ', $popupStyles) . '"';
+        if ($data->popupBackdropColor !== '') {
+            $popupHtml .= ' data-backdrop-color="' . h($data->popupBackdropColor) . '"';
+        }
+        $popupHtml .= '><div class="ccm-alert-popup-content" style="' . implode('; ', $popupContentStyles) . '">' . $popupContent . '</div></dialog>';
 
         return $popupHtml;
     }

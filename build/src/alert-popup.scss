@@ -6,6 +6,9 @@ $ccm-alert-popup-anim-duration: 0.6s;
     padding: 0;
     margin: auto;
     border: none;
+    &, &>* {
+        box-sizing: border-box;
+    }
 
     .ccm-alert-popup-close {
         position: absolute;
@@ -34,8 +37,7 @@ $ccm-alert-popup-anim-duration: 0.6s;
         padding: 0 $ccm-alert-popup-padding $ccm-alert-popup-padding $ccm-alert-popup-padding;
         overflow-x: visible;
         overflow-y: auto;
-        max-height: calc(100vh - 80px);
-        & :last-child {
+        &>:last-child {
             margin-bottom: 0;
         }
     }

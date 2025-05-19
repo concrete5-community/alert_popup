@@ -35,9 +35,8 @@ defined('C5_EXECUTE') or die('Access Denied.');
 
 $monoStyle = 'font-family: Menlo, Monaco, Consolas, \'Courier New\', monospace;';
 $tabsPrefix = version_compare(APP_VERSION, '9') < 0 ? 'ccm-tab-content-' : '';
-$twoInputGroupsStyle = version_compare(APP_VERSION, '9') < 0 ? ['style' => 'width: 50%'] : [];
-$inputRangeStyle = version_compare(APP_VERSION, '9') < 0 ? ['style' => 'padding: 0'] : [];
-
+$inputRangeStyle = version_compare(APP_VERSION, '9') < 0 ? 'padding: 0;' : '';
+$inputColorStyle = 'padding: 0;';
 $matches = null;
 
 $matched = preg_match('/^(\d+)(\D+)$/', $popupWidth, $matches);
@@ -47,6 +46,7 @@ $popupWidthUnit = $matched ? $matches[2] : 'vw';
 $matched = preg_match('/^(\d+)(\D+)$/', $popupHeight, $matches);
 $popupHeightValue = $matched ? (int) $matches[1] : '';
 $popupHeightUnit = $matched ? $matches[2] : 'vh';
+list($inpupGroupButtonsOpen, $inpupGroupButtonsClose) = version_compare(APP_VERSION, '9') < 0 ? ['<span class="input-group-btn">', '</span>'] : ['', ''];
 
 ob_start();
 ?>
@@ -54,8 +54,7 @@ ob_start();
 
     <?= $ui->tabs([
         ['alertpopup-editor-launcher', t('Launcher'), true],
-        ['alertpopup-editor-popupsize', t('Size')],
-        ['alertpopup-editor-appearance', t('Appearance')],
+        ['alertpopup-editor-popup', t('Popup')],
         ['alertpopup-editor-animations', t('Animations')],
         ['alertpopup-editor-content', t('Content')],
     ]) ?>
@@ -95,19 +94,51 @@ ob_start();
                 </div>
                 <div v-if="launcherContentType === 'text'" class="form-group">
                     <?= $form->label('launcherText', t('Text')) ?>
-                    <?= $form->text('launcherText', '', ['v-model.trim' => 'launcherText', 'maxlength' => '255', 'required' => 'required']) ?>
+                    <?= $form->text(
+                        'launcherText',
+                        '',
+                        [
+                            'v-model.trim' => 'launcherText',
+                            'maxlength' => '255',
+                            'required' => 'required',
+                        ]
+                    ) ?>
                 </div>
                 <div v-show="launcherContentType === 'image'" class="form-group">
-                    <?= $al->image('ccm-alertpopup-editor-image-file', 'launcherImage', t('Choose Image'), $launcherImage) ?>
+                    <?= $al->image(
+                        'ccm-alertpopup-editor-image-file',
+                        'launcherImage',
+                        t('Choose Image'),
+                        $launcherImage
+                    ) ?>
                 </div>
                 <div class="form-group">
                     <?= $form->label('launcherCssClass', t('CSS classes of the launcher')) ?>
-                    <?= $form->text('launcherCssClass', '', ['v-model.trim' => 'launcherCssClass', 'maxlength' => '255', 'pattern' => '\s*-?[_a-zA-Z]+[_a-zA-Z0-9\-]*(\s+-?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*\s*', 'style' => $monoStyle]) ?>
+                    <?= $form->text(
+                        'launcherCssClass',
+                        '',
+                        [
+                            'v-model.trim' => 'launcherCssClass',
+                            'maxlength' => '255',
+                            'pattern' => '\s*-?[_a-zA-Z]+[_a-zA-Z0-9\-]*(\s+-?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*\s*',
+                            'style' => $monoStyle,
+                        ]
+                    ) ?>
                 </div>
             </div>
             <div class="form-group">
                 <?= $form->label('popupID', t('ID of the popup')) ?>
-                <?= $form->text('popupID', '', ['v-model.trim' => 'popupID', 'maxlength' => '255', 'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)), 'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*']) ?>
+                <?= $form->text(
+                    'popupID',
+                    '',
+                    [
+                        'v-model.trim' => 'popupID',
+                        'maxlength' => '255',
+                        'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)),
+                        'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*',
+                        'style' => $monoStyle,
+                    ]
+                ) ?>
                 <div class="small text-muted">
                     <?= t("Required if the type of the launcher is set to '%s'", tc('Launcher', 'None')) ?>
                 </div>
@@ -118,160 +149,298 @@ ob_start();
             </div>
         </div>
 
-        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-popupsize">
-            <input type="hidden" name="popupWidth" v-bind:value="popupWidth" />
-            <input type="hidden" name="popupHeight" v-bind:value="popupHeight" />
+        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-popup">
             <div class="row">
                 <div class="col-6 col-sm-6">
                     <div class="form-group">
                         <?= $form->label('popupWidthValue', t('Width')) ?>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupWidthValue',
                                 '',
-                                ['v-model' => 'popupWidthValue', 'min' => '1', 'v-bind:max' => "popupWidthUnit === 'vw' ? '100' : '9999999999'", 'required' => 'required'] + $twoInputGroupsStyle
+                                [
+                                    'v-model' => 'popupWidthValue',
+                                    'min' => '1',
+                                    'v-bind:max' => "popupWidthUnit === 'vw' ? '100' : '9999999999'",
+                                    'required' => 'required',
+                                ]
                             ) ?>
-                            <?= $form->select(
-                                'popupWidthUnit', 
-                                ['px' => Unit::getName('graphics/pixel', 'short'), 'vw' => t('% of the window width')],
-                                '',
-                                ['v-model' => 'popupWidthUnit', 'required' => 'required'] + $twoInputGroupsStyle
-                            ) ?>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn"
+                                    v-bind:class="popupWidthUnit === 'px' ? 'btn-primary' : 'btn-default'"
+                                    v-on:click.prevent="popupWidthUnit = 'px'"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn"
+                                    v-bind:class="popupWidthUnit === 'vw' ? 'btn-primary' : 'btn-default'"
+                                    v-on:click.prevent="popupWidthUnit = 'vw'"
+                                    title="<?= t('Percentage of window width') ?>"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
+                    <input type="hidden" name="popupWidth" v-bind:value="popupWidth" />
                 </div>
                 <div class="col-6 col-sm-6">
                     <div class="form-group">
                         <?= $form->label('popupHeightValue', t('Height')) ?>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupHeightValue',
                                 '',
-                                ['v-model' => 'popupHeightValue', 'min' => '1', 'v-bind:max' => "popupHeightUnit === 'vh' ? '100' : '9999999999'", 'placeholder' => tc('height', 'Empty - automatic')] + $twoInputGroupsStyle
+                                [
+                                    'v-model' => 'popupHeightValue',
+                                    'min' => '1',
+                                    'v-bind:max' => "popupHeightUnit === 'vh' ? '100' : '9999999999'",
+                                    'placeholder' => tc('height', 'Empty - automatic'),
+                                ]
                             ) ?>
-                            <?= $form->select(
-                                'popupHeightUnit', 
-                                ['px' => Unit::getName('graphics/pixel', 'short'), 'vh' => t('% of the window height')],
-                                '',
-                                ['v-model' => 'popupHeightUnit', 'required' => 'required'] + $twoInputGroupsStyle
-                            ) ?>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn"
+                                    v-bind:class="popupHeightUnit === 'px' ? 'btn-primary' : 'btn-default'"
+                                    v-on:click.prevent="popupHeightUnit = 'px'"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn"
+                                    v-bind:class="popupHeightUnit === 'vh' ? 'btn-primary' : 'btn-default'"
+                                    v-on:click.prevent="popupHeightUnit = 'vh'"
+                                    title="<?= t('Percentage of window height') ?>"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
+                    <input type="hidden" name="popupHeight" v-bind:value="popupHeight" />
                 </div>
             </div>
             <div class="row">
                 <div class="col-6 col-sm-6">
-                    <div class="form-group">
-                        <?= $form->label('popupMinWidth', t('Minimum Width')) ?>
-                        <div class="input-group">
+                    <div class="form-group" v-if="popupWidthUnit === 'vw'">
+                        <?= $form->label('popupMinWidth', t('Minimum width')) ?>
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupMinWidth',
                                 '',
-                                ['v-model' => 'popupMinWidth', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('width', 'Empty - none')]
+                                [
+                                    'v-model' => 'popupMinWidth',
+                                    'min' => '1',
+                                    'max' => '9999999999',
+                                    'placeholder' => tc('width', 'Empty - none'),
+                                ]
                             ) ?>
-                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    style="visibility: hidden"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <div class="form-group">
-                        <?= $form->label('popupMinHeight', t('Minimum Height')) ?>
-                        <div class="input-group">
+                    <div class="form-group" v-if="!/^\d+px$/.test(popupHeight)">
+                        <?= $form->label('popupMinHeight', t('Minimum height')) ?>
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupMinHeight',
                                 '',
-                                ['v-model' => 'popupMinHeight', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('height', 'Empty - none')]
+                                [
+                                    'v-model' => 'popupMinHeight',
+                                    'min' => '1',
+                                    'max' => '9999999999',
+                                    'placeholder' => tc('height', 'Empty - none'),
+                                ]
                             ) ?>
-                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    style="visibility: hidden"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-6 col-sm-6">
-                    <div class="form-group">
-                        <?= $form->label('popupMaxWidth', t('Maximum Width')) ?>
-                        <div class="input-group">
+                    <div class="form-group" v-if="popupWidthUnit === 'vw'">
+                        <?= $form->label('popupMaxWidth', t('Maximum width')) ?>
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupMaxWidth',
                                 '',
-                                ['v-model' => 'popupMaxWidth', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('width', 'Empty - none')]
+                                [
+                                    'v-model' => 'popupMaxWidth',
+                                    'min' => '1',
+                                    'max' => '9999999999',
+                                    'placeholder' => tc('width', 'Empty - none'),
+                                ]
                             ) ?>
-                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    style="visibility: hidden"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <div class="form-group">
-                        <?= $form->label('popupMaxHeight', t('Maximum Height')) ?>
-                        <div class="input-group">
+                    <div class="form-group" v-if="!/^\d+px$/.test(popupHeight)">
+                        <?= $form->label('popupMaxHeight', t('Maximum height')) ?>
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupMaxHeight',
                                 '',
-                                ['v-model' => 'popupMaxHeight', 'min' => '1', 'max' => '9999999999', 'placeholder' => tc('height', 'Empty - none')]
+                                [
+                                    'v-model' => 'popupMaxHeight',
+                                    'min' => '1',
+                                    'max' => '9999999999',
+                                    'placeholder' => tc('height', 'Empty - none'),
+                                ]
                             ) ?>
-                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    style="visibility: hidden"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-appearance">
             <div class="row">
                 <div class="col-6 col-sm-6">
                     <div class="form-group">
-                        <?= $form->label('popupBorderWidth', t('Border Width')) ?>
-                        <div class="input-group">
+                        <?= $form->label('popupBorderWidth', t('Border width')) ?>
+                        <div class="input-group input-group-sm">
                             <?= $form->number(
                                 'popupBorderWidth',
                                 '',
-                                ['v-model' => 'popupBorderWidth', 'min' => '0', 'max' => '999', 'required' => 'required']
+                                [
+                                    'v-model' => 'popupBorderWidth',
+                                    'min' => '0',
+                                    'max' => '999',
+                                    'required' => 'required',
+                                ]
                             ) ?>
-                            <span class="input-group-addon input-group-text"><?= Unit::getName('graphics/pixel', 'short') ?></span>
+                            <?= $inpupGroupButtonsOpen ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    title="<?= Unit::getName('graphics/pixel', 'long') ?>"
+                                ><?= Unit::getName('graphics/pixel', 'narrow') ?></button>
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    style="visibility: hidden"
+                                >%</button>
+                            <?= $inpupGroupButtonsClose ?>
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-sm-6" v-if="popupBorderWidth">
-                    <?= $form->label('popupBorderColor', t('Border Color')) ?>
-                    <?= $form->color(
-                        'popupBorderColor',
-                        '',
-                        ['v-model' => 'popupBorderColor', 'required' => 'required']
-                    ) ?>
-                </div>
-            </div>
-            <div class="row">
                 <div class="col-6 col-sm-6">
-                    <?= $form->label('popupBackgroundColor', t('Background Color')) ?>
-                    <?= $form->color(
-                        'popupBackgroundColor',
-                        '',
-                        ['v-model' => 'popupBackgroundColor', 'required' => 'required']
-                    ) ?>
-                </div>
-                <div class="col-6 col-sm-6">
-                    <div class="form-group">
-                        <?= $form->label('popupCssClass', t('CSS classes')) ?>
-                        <?= $form->text('popupCssClass', '', ['v-model.trim' => 'popupCssClass', 'maxlength' => '255', 'pattern' => '\s*-?[_a-zA-Z]+[_a-zA-Z0-9\-]*(\s+-?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*\s*', 'style' => $monoStyle]) ?>
+                    <div class="form-group" v-if="popupBorderWidth && popupBorderWidth !== '0'">
+                        <?= $form->label('popupBorderColor', t('Border color')) ?>
+                        <?= $form->color(
+                            'popupBorderColor',
+                            '',
+                            [
+                                'v-model' => 'popupBorderColor',
+                                'required' => 'required',
+                                'style' => $inputColorStyle,
+                            ]
+                        ) ?>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-6 col-sm-6">
-                    <?= $form->label('popupBackdropColorRGB', t('Backdrop Color')) ?>
+                    <?= $form->label('popupBackgroundColor', t('Background color')) ?>
                     <?= $form->color(
-                        'popupBackdropColorRGB',
+                        'popupBackgroundColor',
                         '',
-                        ['v-model' => 'popupBackdropColorRGB', 'required' => 'required']
+                        [
+                            'v-model' => 'popupBackgroundColor',
+                            'required' => 'required',
+                            'style' => $inputColorStyle,
+                        ]
                     ) ?>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <?= $form->label('popupBackdropColorAlpha', t('Backdrop Opacity') . ' ({{ popupBackdropColorAlpha }})</span>') ?>
+                    <div class="form-group form-group-sm">
+                        <?= $form->label('popupCssClass', t('CSS classes')) ?>
+                        <?= $form->text(
+                            'popupCssClass',
+                            '',
+                            [
+                                'v-model.trim' => 'popupCssClass',
+                                'maxlength' => '255',
+                                'pattern' => '\s*-?[_a-zA-Z]+[_a-zA-Z0-9\-]*(\s+-?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*\s*',
+                                'style' => $monoStyle,
+                                'class' => 'form-control-sm',
+                            ]
+                        ) ?>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6 col-sm-6">
+                    <?= $form->label('popupBackdropColorRGB', t('Backdrop color')) ?>
+                    <?= $form->color(
+                        'popupBackdropColorRGB',
+                        '',
+                        [
+                            'v-model' => 'popupBackdropColorRGB',
+                            'required' => 'required',
+                            'style' => $inputColorStyle,
+                        ]
+                    ) ?>
+                </div>
+                <div class="col-6 col-sm-6">
+                    <?= $form->label('popupBackdropColorAlpha', t('Backdrop opacity') . ' ({{ popupBackdropColorAlpha }})</span>') ?>
                     <?= $form->range(
                         'popupBackdropColorAlpha',
                         '',
-                        ['v-model' => 'popupBackdropColorAlpha', 'min' => '0', 'max' => '100', 'step' => '1', 'required' => 'required'] + $inputRangeStyle
+                        [
+                            'v-model' => 'popupBackdropColorAlpha',
+                            'min' => '0',
+                            'max' => '100',
+                            'step' => '1',
+                            'required' => 'required',
+                            'style' => $inputRangeStyle,
+                        ]
                     ) ?>
                 </div>
             </div>
@@ -339,15 +508,15 @@ function launchApp() {
                 'ANIMATIONS' => [
                     [
                         'key' => 'fade-in',
-                        'name' => t('Fade In'),
+                        'name' => t('Fade in'),
                     ],
                     [
                         'key' => 'slide-in',
-                        'name' => t('Slide In'),
+                        'name' => t('Slide in'),
                     ],
                     [
                         'key' => 'zoom-in',
-                        'name' => t('Zoom In'),
+                        'name' => t('Zoom in'),
                     ],
                 ],
                 'launcherType' => $launcherType,
