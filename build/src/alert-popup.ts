@@ -74,12 +74,23 @@ function createCloseButton(): HTMLElement
     return button;
 }
 
-function createStyleElement(el: HTMLDialogElement): HTMLStyleElement|null
+function createStyleElement(el: HTMLDialogElement, animated: boolean): HTMLStyleElement|null
 {
     const id = el.id;
     const ruleLines: string[] = [];
+    const backdropRules: string[] = [];
     if (el.dataset?.backdropColor) {
-        ruleLines.push(`dialog#${id}::backdrop { background-color: ${el.dataset.backdropColor}; }`);
+        backdropRules.push(`background-color: ${el.dataset.backdropColor};`);
+    }
+    if (animated) {
+        const elStyle = window.getComputedStyle(el);
+        const transitionDuration = cssTimeToMillisecs(elStyle.transitionDuration);
+        if (transitionDuration !== null) {
+            backdropRules.push(`transition-duration: ${transitionDuration}ms;`);
+        }
+    }
+    if (backdropRules.length > 0) {
+        ruleLines.push(`dialog#${id}::backdrop { ${backdropRules.join(' ')} }`);
     }
     if (ruleLines.length === 0) {
         return null;
@@ -140,7 +151,7 @@ class Popup
         this.el.addEventListener('close', this.closeListener);
         this.el.addEventListener('cancel', this.cancelListener);
         openPopups.push(this);
-        this.styleElement = createStyleElement(this.el);
+        this.styleElement = createStyleElement(this.el, this.animated);
         this.el.showModal();
         if (this.animated) {
             window.requestAnimationFrame(() => {

@@ -57,6 +57,9 @@
     <field name="popupAnimations" type="text" comment="List of popup animations">
         <notnull />
     </field>
+    <field name="popupAnimationDuration" type="text" comment="Animations duration, in milliseconds">
+        <notnull />
+    </field>
     <field name="popupCssClass" type="string" size="255" comment="CSS classes for the popup">
         <notnull />
     </field>

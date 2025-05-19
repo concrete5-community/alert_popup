@@ -1,5 +1,5 @@
 $ccm-alert-popup-padding: 18px;
-$ccm-alert-popup-anim-duration: 0.6s;
+$ccm-alert-popup-anim-default-duration: 0.6s;
 
 .ccm-alert-popup {
     position: fixed;
@@ -42,15 +42,30 @@ $ccm-alert-popup-anim-duration: 0.6s;
         }
     }
 
+    &::backdrop {
+        background-color: #00000019;
+    }
+
     &[class*=" ccm-alert-popup-anim-"], &[class^="ccm-alert-popup-anim-"] {
         pointer-events: none;
         transition-property: all;
-        transition-duration: $ccm-alert-popup-anim-duration;
+        transition-duration: $ccm-alert-popup-anim-default-duration;
         transition-timing-function: ease;
         transition-delay: 0s;
         transition-behavior: normal;
         &.ccm-alert-popup-open {
             pointer-events: auto;
+        }
+        &::backdrop {
+            opacity: 0;
+            transition-property: opacity;
+            transition-duration: $ccm-alert-popup-anim-default-duration;
+            transition-timing-function: ease;
+            transition-delay: 0s;
+            transition-behavior: normal;
+        }
+        &.ccm-alert-popup-open::backdrop {
+            opacity: 1;
         }
     }
     &.ccm-alert-popup-anim-fade-in {
