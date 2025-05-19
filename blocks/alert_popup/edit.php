@@ -28,6 +28,7 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var string $popupBackgroundColor
  * @var string $popupBackdropColor
  * @var string $popupAnimations
+ * @var int $popupAnimationDuration
  * @var string $popupCssClass
  * @var string $popupID
  * @var string $popupContent
@@ -449,28 +450,47 @@ ob_start();
 
         <div class="ccm-tab-content tab-pane" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-animations">
             <input type="hidden" name="popupAnimations" v-bind:value="popupAnimations" />
-            <div v-for="A in ANIMATIONS">
-                <?php
-                if (version_compare(APP_VERSION, '9') < 0) {
-                    ?>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" v-bind:value="A.key" v-model="selectedAnimations" />
-                            {{ A.name }}
-                        </label>
-                    </div>
+            <div class="form-group">
+                <?= $form->label('', t('Transition effects')) ?>
+                <div v-for="A in ANIMATIONS">
                     <?php
-                } else {
+                    if (version_compare(APP_VERSION, '9') < 0) {
+                        ?>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" v-bind:value="A.key" v-model="selectedAnimations" />
+                                {{ A.name }}
+                            </label>
+                        </div>
+                        <?php
+                    } else {
+                        ?>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" v-bind:value="A.key" v-bind:id="`alertpopup-editor-animation-${A.key}`" v-model="selectedAnimations" />
+                            <label class="form-check-label" v-bind:for="`alertpopup-editor-animation-${A.key}`">
+                                {{ A.name }}
+                            </label>
+                        </div>
+                        <?php
+                    }
                     ?>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" v-bind:value="A.key" v-bind:id="`alertpopup-editor-animation-${A.key}`" v-model="selectedAnimations" />
-                        <label class="form-check-label" v-bind:for="`alertpopup-editor-animation-${A.key}`">
-                            {{ A.name }}
-                        </label>
-                    </div>
-                    <?php
-                }
-                ?>
+                </div>
+            </div>
+            <div class="form-group">
+                <?= $form->label('popupAnimationDuration', t('Transition duration')) ?>
+                <div class="input-group input-group-sm">
+                    <?= $form->number(
+                        'popupAnimationDuration',
+                        '',
+                        [
+                            'v-model' => 'popupAnimationDuration',
+                            'min' => '1',
+                            'max' => '9999999999',
+                            'v-bind:required' => 'selectedAnimations.length !== 0',
+                        ]
+                    ) ?>
+                    <span class="input-group-addon input-group-text" title="<?= Unit::getName('duration/millisecond', 'long') ?>"><?= Unit::getName('duration/millisecond', 'narrow') ?></span>
+                </div>
             </div>
         </div>
 
@@ -537,6 +557,7 @@ function launchApp() {
                 'popupBackdropColorRGB' => preg_match('/^#[0-9a-f]{8}$/i', $popupBackdropColor) ? substr($popupBackdropColor, 0, 7) : '#000000',
                 'popupBackdropColorAlpha' => preg_match('/^#[0-9a-f]{8}$/i', $popupBackdropColor) ? round(100 * hexdec(substr($popupBackdropColor, 7, 2)) / 255) : 10,
                 'selectedAnimations' => preg_split('/[^\w\-]/', $popupAnimations, -1, PREG_SPLIT_NO_EMPTY),
+                'popupAnimationDuration' => $popupAnimationDuration > 0 ? $popupAnimationDuration : 600,
                 'popupCssClass' => $popupCssClass,
                 'popupID' => $popupID,
                 'popupPreview' => [

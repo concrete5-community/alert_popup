@@ -202,6 +202,13 @@ class Controller extends BlockController implements FileTrackableInterface
     protected $popupAnimations;
 
     /**
+     * Animations duration, in milliseconds.
+     *
+     * @var int|string|null
+     */
+    protected $popupAnimationDuration;
+
+    /**
      * CSS classes for the popup.
      *
      * @var string|null
@@ -259,6 +266,7 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('popupBackgroundColor', '#ffffff');
         $this->set('popupBackdropColor', '');
         $this->set('popupAnimations', '');
+        $this->set('popupAnimationDuration', 600);
         $this->set('popupCssClass', '');
         $this->set('popupID', '');
         $this->set('popupContent', '');
@@ -276,6 +284,7 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($this->popupBorderColor === '') {
             $this->set('popupBorderColor', '#dddddd');
         }
+        $this->set('popupAnimationDuration', (int) $this->popupAnimationDuration);
         $this->set('popupContent', LinkAbstractor::translateFromEditMode($this->popupContent));
     }
 
@@ -333,6 +342,7 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('popupMinHeight', $this->popupMinHeight ? (int) $this->popupMinHeight : null);
         $this->set('popupMaxHeight', $this->popupMaxHeight ? (int) $this->popupMaxHeight : null);
         $this->set('popupBorderWidth', (int) $this->popupBorderWidth);
+        $this->set('popupAnimationDuration', (int) $this->popupAnimationDuration);
         $popupContent = LinkAbstractor::translateFrom($this->popupContent);
         $this->set('popupContent', $popupContent);
         $editMessages = [];
@@ -647,6 +657,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBackgroundColor' => '',
             'popupBackdropColor' => '',
             'popupAnimations' => '',
+            'popupAnimationDuration' => '',
             'popupCssClass' => '',
             'popupContent' => '',
         ];
@@ -662,6 +673,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBackgroundColor' => trim((string) $args['popupBackgroundColor']),
             'popupBackdropColor' => trim((string) $args['popupBackdropColor']),
             'popupAnimations' => trim((string) $args['popupAnimations']),
+            'popupAnimationDuration' => (int) trim((string) $args['popupAnimationDuration']),
             'popupCssClass' => preg_replace('/\s+/',trim((string) $args['popupCssClass']), ' '),
             'popupContent' => LinkAbstractor::translateTo(trim((string) $args['popupContent'])),
         ];
@@ -715,6 +727,9 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($normalized['popupBackgroundColor'] === '') {
             $errors->add(t('Please specify the background color of the popup'));
         }
+        if ($normalized['popupAnimationDuration'] <= 0) {
+            $normalized['popupAnimationDuration'] = 600;
+        }
         if ($normalized['popupContent'] === '') {
             $errors->add(t('Please specify the content of the popup'));
         }
@@ -732,12 +747,22 @@ class Controller extends BlockController implements FileTrackableInterface
     private static function generatePopupHtml($data, $popupID, $popupContent = null)
     {
         $popupClasses = [];
+        $popupAttributes = [];
         $popupStyles = [];
         $popupContentStyles = [];
         $popupClasses[] = 'ccm-alert-popup';
-        foreach (preg_split('/[^\w\-]/', $data->popupAnimations, -1, PREG_SPLIT_NO_EMPTY) as $animation) {
-            $popupClasses[] = "ccm-alert-popup-anim-{$animation}";
+        if ($data->popupAnimations) {
+            foreach (preg_split('/[^\w\-]/', $data->popupAnimations, -1, PREG_SPLIT_NO_EMPTY) as $animation) {
+                $popupClasses[] = "ccm-alert-popup-anim-{$animation}";
+            }
+            if ($data->popupAnimationDuration) {
+                $popupStyles[] = 'transition-duration: ' . $data->popupAnimationDuration  . 'ms';
+            }
         }
+        if ($data->popupBackdropColor !== '') {
+            $popupAttributes[] = 'data-backdrop-color="' . h($data->popupBackdropColor) . '"';
+        }
+        
         if ($data->popupCssClass !== '') {
             $popupClasses[] = h($data->popupCssClass);
         }
@@ -768,8 +793,8 @@ class Controller extends BlockController implements FileTrackableInterface
             $popupContent = LinkAbstractor::translateFrom($data->popupContent);
         }
         $popupHtml = '<dialog id="' . h($popupID) . '" class="' . implode(' ', $popupClasses) . '" style="' . implode('; ', $popupStyles) . '"';
-        if ($data->popupBackdropColor !== '') {
-            $popupHtml .= ' data-backdrop-color="' . h($data->popupBackdropColor) . '"';
+        if ($popupAttributes !== []) {
+            $popupHtml .= ' ' . implode(' ', $popupAttributes);
         }
         $popupHtml .= '><div class="ccm-alert-popup-content" style="' . implode('; ', $popupContentStyles) . '">' . $popupContent . '</div></dialog>';
 
