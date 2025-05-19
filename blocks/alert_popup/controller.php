@@ -787,7 +787,7 @@ class Controller extends BlockController implements FileTrackableInterface
             $popupContentStyles[] = "max-height: calc({$data->popupMaxHeight}px - 19px)";
         }
         if (!$data->popupHeight && !$data->popupMaxHeight) {
-            $popupContentStyles[] = 'max-height: calc(100vh - 12px)';
+            $popupContentStyles[] = 'max-height: calc(100vh - 80px)';
         }
         if ($popupContent === null) {
             $popupContent = LinkAbstractor::translateFrom($data->popupContent);
