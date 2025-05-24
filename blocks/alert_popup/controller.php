@@ -714,7 +714,7 @@ class Controller extends BlockController implements FileTrackableInterface
             $normalized['popupMaxHeight'] = (int) $normalized['popupMaxHeight'];
         }
         if (!preg_match('/^\d{0,9}$/', $normalized['popupBorderWidth'])) {
-            $errors->add(t('Invalid width of the border of of the popup'));
+            $errors->add(t('Invalid width of the border of the popup'));
         } else {
             $normalized['popupBorderWidth'] = (int) $normalized['popupBorderWidth'];
         }
