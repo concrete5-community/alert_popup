@@ -506,6 +506,7 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         $args += [
             'launcherType' => '',
+            'launcherContentType' => '',
             'launcherText' => '',
             'launcherImage' => '',
             'launcherCssClass' => '',
