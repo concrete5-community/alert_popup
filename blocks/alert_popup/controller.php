@@ -11,6 +11,7 @@ use Concrete\Core\File\Tracker\FileTrackableInterface;
 use Concrete\Core\Http\ResponseFactoryInterface;
 use Concrete\Core\Localization\Localization;
 use Concrete\Core\Package\PackageService;
+use Concrete\Core\Statistics\UsageTracker\AggregateTracker;
 use Concrete\Core\Utility\Service\Xml;
 
 class Controller extends BlockController implements FileTrackableInterface
@@ -95,6 +96,11 @@ class Controller extends BlockController implements FileTrackableInterface
     protected $btExportContentColumns = ['popupContent'];
 
     /**
+     * @var \Concrete\Core\Statistics\UsageTracker\AggregateTracker|null
+     */
+    protected $tracker;
+
+    /**
      * Type of the item to be clicked.
      *
      * @var string|null
@@ -143,14 +149,12 @@ class Controller extends BlockController implements FileTrackableInterface
      */
     protected $popupMaxWidth;
 
-
     /**
      * Height of the popup.
      *
      * @var string|null
      */
     protected $popupHeight;
-
 
     /**
      * Min height (in pixels) of the popup.
@@ -311,7 +315,25 @@ class Controller extends BlockController implements FileTrackableInterface
         if (!is_array($normalized)) {
             throw new UserMessageException(implode("\n", $normalized->getList()));
         }
-        return parent::save($normalized);
+        $this->popupContent = $normalized['popupContent'];
+        $this->launcherImage = $normalized['launcherImage'];
+        parent::save($normalized);
+        if (version_compare(APP_VERSION, '9.0.2') < 0) {
+            $this->getTracker()->track($this);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Concrete\Core\Block\BlockController::delete()
+     */
+    public function delete()
+    {
+        if (version_compare(APP_VERSION, '9.0.2') < 0) {
+            $this->getTracker()->forget($this);
+        }
+        parent::delete();
     }
 
     /**
@@ -398,7 +420,7 @@ class Controller extends BlockController implements FileTrackableInterface
     public function getUsedFiles()
     {
         $result = static::getUsedFilesIn($this->popupContent);
-        if (($id = (int) $this->launcherImage) > 0 && !in_array($id, $result, true)) {
+        if (($id = (int) $this->launcherImage) > 0) {
             $result[] = $id;
         }
 
@@ -419,7 +441,6 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         return $this->getCollectionObject();
     }
-
 
     /**
      * @return \Symfony\Component\HttpFoundation\JsonResponse
@@ -456,6 +477,18 @@ class Controller extends BlockController implements FileTrackableInterface
         }
 
         return $args;
+    }
+
+    /**
+     * @return \Concrete\Core\Statistics\UsageTracker\AggregateTracker
+     */
+    protected function getTracker()
+    {
+        if ($this->tracker === null) {
+            $this->tracker = $this->app->make(AggregateTracker::class);
+        }
+
+        return $this->tracker;
     }
 
     /**
@@ -519,7 +552,6 @@ class Controller extends BlockController implements FileTrackableInterface
             'launcherImage' => null,
             'launcherCssClass' => '',
             'popupID' => trim((string) $args['popupID']),
-            
         ] + static::parsePopupArguments($args, $errors);
         switch ($normalized['launcherType']) {
             case self::LAUNCHERTYPE_LINK:
@@ -570,32 +602,34 @@ class Controller extends BlockController implements FileTrackableInterface
     /**
      * @param string|null $richText
      *
-     * @return int[]
+     * @return int[]|string[]
      */
     protected static function getUsedFilesIn($richText)
     {
+        $richText = (string) $richText;
+        if ($richText === '') {
+            return [];
+        }
+        $rxIdentifier = '(?<id>[1-9][0-9]{0,18})';
+        if (method_exists(\Concrete\Core\File\File::class, 'getByUUID')) {
+            $rxIdentifier = '(?:(?<uuid>[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})|' . $rxIdentifier . ')';
+        }
         $result = [];
         $matches = null;
-        if ($richText) {
-            if (preg_match_all('/\<concrete-picture[^>]*?fID\s*=\s*[\'"]([^\'"]*?)[\'"]/i', $richText, $matches)) {
-                foreach ($matches[1] as $id) {
-                    $id = (int) $id;
-                    if ($id > 0) {
-                        $result[] = $id;
-                    }
-                }
+        foreach ([
+            '/\<concrete-picture[^>]*?\bfID\s*=\s*[\'"]' . $rxIdentifier . '[\'"]/i',
+            '/\bFID_DL_' . $rxIdentifier . '\b/',
+        ] as $rx) {
+            if (!preg_match_all($rx, $richText, $matches)) {
+                continue;
             }
-            if (preg_match_all('(FID_DL_\d+)', $richText, $matches)) {
-                foreach ($matches[0] as $id) {
-                    $id = (int) $id;
-                    if ($id > 0) {
-                        $result[] = $id;
-                    }
-                }
+            $result = array_merge($result, array_map('intval', array_filter($matches['id'])));
+            if (isset($matches['uuid'])) {
+                $result = array_merge($result, array_map('strtolower', array_filter($matches['uuid'])));
             }
         }
 
-        return array_values(array_unique($result));
+        return $result;
     }
 
     private function requireMyAssets()
@@ -763,7 +797,6 @@ class Controller extends BlockController implements FileTrackableInterface
         if ($data->popupBackdropColor !== '') {
             $popupAttributes[] = 'data-backdrop-color="' . h($data->popupBackdropColor) . '"';
         }
-        
         if ($data->popupCssClass !== '') {
             $popupClasses[] = h($data->popupCssClass);
         }
