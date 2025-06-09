@@ -471,8 +471,8 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         $args = parent::getImportData($blockNode, $page);
         if (version_compare(APP_VERSION, '9.2.1') < 0) {
-            if (!empty($args['popupContent'])) {
-                $args['popupContent'] = LinkAbstractor::import($args['popupContent']);
+            if (isset($blockNode->data->record->popupContent)) {
+                $args['popupContent'] = LinkAbstractor::import((string) $blockNode->data->record->popupContent);
             }
         }
 
