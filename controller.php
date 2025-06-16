@@ -11,7 +11,7 @@ class Controller extends Package implements ProviderInterface
 {
     protected $pkgHandle = 'alert_popup';
 
-    protected $pkgVersion = '1.3.2';
+    protected $pkgVersion = '1.3.3';
 
     /**
      * {@inheritdoc}
