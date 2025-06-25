@@ -11,4 +11,14 @@
         </blocktypeset>
     </blocktypesets>
 
+    <singlepages>
+        <page name="Alert Popups" description="" pagetype="" path="/dashboard/alert-popup" package="alert_popup">
+        </page>
+        <page name="Edit Alert Popup" description="" pagetype="" path="/dashboard/alert-popup/details" package="alert_popup">
+            <attributekey handle="exclude_nav">
+                <value>1</value>
+            </attributekey>
+        </page>
+    </singlepages>
+
 </concrete5-cif>

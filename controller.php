@@ -2,16 +2,17 @@
 
 namespace Concrete\Package\AlertPopup;
 
-use Concrete\Core\Database\EntityManager\Provider\ProviderInterface;
+use Concrete\Core\Database\EntityManager\Provider\ProviderAggregateInterface;
+use Concrete\Core\Database\EntityManager\Provider\StandardPackageProvider;
 use Concrete\Core\Package\Package;
 
 defined('C5_EXECUTE') or die('Access Denied.');
 
-class Controller extends Package implements ProviderInterface
+class Controller extends Package implements ProviderAggregateInterface
 {
     protected $pkgHandle = 'alert_popup';
 
-    protected $pkgVersion = '1.3.3';
+    protected $pkgVersion = '2.0.0';
 
     /**
      * {@inheritdoc}
@@ -65,10 +66,16 @@ class Controller extends Package implements ProviderInterface
     /**
      * {@inheritdoc}
      *
-     * @see \Concrete\Core\Database\EntityManager\Provider\ProviderInterface::getDrivers()
+     * @see \Concrete\Core\Database\EntityManager\Provider\ProviderAggregateInterface::getEntityManagerProvider()
      */
-    public function getDrivers()
+    public function getEntityManagerProvider()
     {
-        return [];
+        return new StandardPackageProvider(
+            $this->app,
+            $this,
+            [
+                'src/Concrete/Entity' => 'Concrete\Package\AlertPopup\Entity',
+            ]
+        );
     }
 }

@@ -13,6 +13,11 @@ use Concrete\Core\Localization\Localization;
 use Concrete\Core\Package\PackageService;
 use Concrete\Core\Statistics\UsageTracker\AggregateTracker;
 use Concrete\Core\Utility\Service\Xml;
+use Concrete\Package\AlertPopup\PopupData;
+use Concrete\Package\AlertPopup\Service;
+use SimpleXMLElement;
+
+defined('C5_EXECUTE') or die('Access Denied.');
 
 class Controller extends BlockController implements FileTrackableInterface
 {
@@ -26,11 +31,6 @@ class Controller extends BlockController implements FileTrackableInterface
      * @private
      */
     const RX_VALIDATE_ID = '[A-Za-z_][A-Za-z0-9_\-]*';
-
-    /**
-     * @private
-     */
-    const RX_VALIDATE_CSS_CLASSLIST = '-?[_a-zA-Z]+[_a-zA-Z0-9\-]*( -?[_a-zA-Z]+[_a-zA-Z0-9\-]*)*';
 
     /**
      * {@inheritdoc}
@@ -259,37 +259,15 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->set('launcherText', '');
         $this->set('launcherImage', null);
         $this->set('launcherCssClass', '');
-        $this->set('popupWidth', '67vw');
-        $this->set('popupMinWidth', 200);
-        $this->set('popupMaxWidth', 600);
-        $this->set('popupHeight', '');
-        $this->set('popupMinHeight', 100);
-        $this->set('popupMaxHeight', 500);
-        $this->set('popupBorderWidth', 5);
-        $this->set('popupBorderColor', '#dddddd');
-        $this->set('popupBackgroundColor', '#ffffff');
-        $this->set('popupBackdropColor', '');
-        $this->set('popupAnimations', '');
-        $this->set('popupAnimationDuration', 600);
-        $this->set('popupCssClass', '');
+        $this->set('popupData', new PopupData());
         $this->set('popupID', '');
-        $this->set('popupContent', '');
     }
 
     public function edit()
     {
         $this->prepareEditUI();
         $this->set('launcherImage', ((int) $this->launcherImage) ?: null);
-        $this->set('popupMinWidth', ((int) $this->popupMinWidth) ?: null);
-        $this->set('popupMaxWidth', ((int) $this->popupMaxWidth) ?: null);
-        $this->set('popupMinHeight', ((int) $this->popupMinHeight) ?: null);
-        $this->set('popupMaxHeight', ((int) $this->popupMaxHeight) ?: null);
-        $this->set('popupBorderWidth', (int) $this->popupBorderWidth);
-        if ($this->popupBorderColor === '') {
-            $this->set('popupBorderColor', '#dddddd');
-        }
-        $this->set('popupAnimationDuration', (int) $this->popupAnimationDuration);
-        $this->set('popupContent', LinkAbstractor::translateFromEditMode($this->popupContent));
+        $this->set('popupData', $this->buildPopupData());
     }
 
     /**
@@ -349,7 +327,6 @@ class Controller extends BlockController implements FileTrackableInterface
     public function view()
     {
         $localization = $this->app->make(Localization::class);
-        $this->set('localization', $localization);
         $withUIContext = function(callable $callback) use ($localization) {
             $originalContext = $localization->getActiveContext();
             $localization->setActiveContext(Localization::CONTEXT_UI);
@@ -359,14 +336,7 @@ class Controller extends BlockController implements FileTrackableInterface
                 $localization->setActiveContext($originalContext);
             }
         };
-        $this->set('popupMinWidth', $this->popupMinWidth ? (int) $this->popupMinWidth : null);
-        $this->set('popupMaxWidth', $this->popupMaxWidth ? (int) $this->popupMaxWidth : null);
-        $this->set('popupMinHeight', $this->popupMinHeight ? (int) $this->popupMinHeight : null);
-        $this->set('popupMaxHeight', $this->popupMaxHeight ? (int) $this->popupMaxHeight : null);
-        $this->set('popupBorderWidth', (int) $this->popupBorderWidth);
-        $this->set('popupAnimationDuration', (int) $this->popupAnimationDuration);
-        $popupContent = LinkAbstractor::translateFrom($this->popupContent);
-        $this->set('popupContent', $popupContent);
+        $this->set('popupData', $this->buildPopupData());
         $editMessages = [];
         $launcherInnerHtml = '';
         $popupID = $this->popupID;
@@ -408,7 +378,7 @@ class Controller extends BlockController implements FileTrackableInterface
         }
         $this->set('launcherInnerHtml', $launcherInnerHtml);
         $this->set('launcherJS', 'if (window.ccmAlertPopup) window.ccmAlertPopup.show(' . json_encode($popupID) . '); return false');
-        $this->set('popupHtml', static::generatePopupHtml($this, $popupID, $popupContent));
+        $this->set('service', $this->app->make(Service::class));
         $this->set('editMessages', $editMessages);
     }
 
@@ -452,13 +422,14 @@ class Controller extends BlockController implements FileTrackableInterface
             throw new UserMessageException($token->getErrorMessage());
         }
         $errors = $this->app->make('helper/validation/error');
-        $data = (object) static::parsePopupArguments($this->request->request->all(), $errors);
+        $popupData = PopupData::fromEditUI($this->request->request->all(), $errors);
         if ($errors->has()) {
             throw new UserMessageException(implode("\n", $errors->getList()));
         }
+        $popupHtml = $this->app->make(Service::class)->generatePopupHtml($popupData, 'ccm-alertpopup-popuppreview');
 
         return $this->app->make(ResponseFactoryInterface::class)->json([
-            'popupHtml' => static::generatePopupHtml((object) $data, 'ccm-alertpopup-popuppreview'),
+            'popupHtml' => $popupHtml,
         ]);
     }
 
@@ -496,7 +467,7 @@ class Controller extends BlockController implements FileTrackableInterface
      *
      * @see \Concrete\Core\Block\BlockController::export()
      */
-    public function export(\SimpleXMLElement $blockNode)
+    public function export(SimpleXMLElement $blockNode)
     {
         parent::export($blockNode);
         if (version_compare(APP_VERSION, '9.4.0') < 0) {
@@ -537,6 +508,8 @@ class Controller extends BlockController implements FileTrackableInterface
      */
     private function normalizeArgs(array $args)
     {
+        $errors = $this->app->make('helper/validation/error');
+        $popupData = PopupData::fromEditUI($args, $errors);
         $args += [
             'launcherType' => '',
             'launcherContentType' => '',
@@ -545,14 +518,27 @@ class Controller extends BlockController implements FileTrackableInterface
             'launcherCssClass' => '',
             'popupID' => '',
         ];
-        $errors = $this->app->make('helper/validation/error');
         $normalized = [
             'launcherType' => trim((string) $args['launcherType']),
             'launcherText' => '',
             'launcherImage' => null,
             'launcherCssClass' => '',
             'popupID' => trim((string) $args['popupID']),
-        ] + static::parsePopupArguments($args, $errors);
+            'popupWidth' => $popupData->getWidth(),
+            'popupMinWidth' => $popupData->getMinWidth(),
+            'popupMaxWidth' => $popupData->getMaxWidth(),
+            'popupHeight' => $popupData->getHeight(),
+            'popupMinHeight' => $popupData->getMinHeight(),
+            'popupMaxHeight' => $popupData->getMaxHeight(),
+            'popupBorderWidth' => $popupData->getBorderWidth(),
+            'popupBorderColor' => $popupData->getBorderColor(),
+            'popupBackgroundColor' => $popupData->getBackgroundColor(),
+            'popupBackdropColor' => $popupData->getBackdropColor(),
+            'popupAnimations' => implode(' ', $popupData->getAnimations()),
+            'popupAnimationDuration' => $popupData->getAnimationDuration(),
+            'popupCssClass' => $popupData->getCssClass(),
+            'popupContent' => $popupData->getContent(),
+        ];
         switch ($normalized['launcherType']) {
             case self::LAUNCHERTYPE_LINK:
             case self::LAUNCHERTYPE_BUTTON:
@@ -579,7 +565,7 @@ class Controller extends BlockController implements FileTrackableInterface
                     $errors->add(t('Please specify the text or the image of the launcher'));
                 }
                 $normalized['launcherCssClass'] = preg_replace('/\s+/', ' ', trim($args['launcherCssClass']));
-                if (!preg_match('/^(' . static::RX_VALIDATE_CSS_CLASSLIST . ')?$/', $normalized['launcherCssClass'])) {
+                if (!preg_match('/^(' . PopupData::RX_VALIDATE_CSS_CLASSLIST . ')?$/', $normalized['launcherCssClass'])) {
                     $errors->add(t('The CSS classes of the launcher contain invalid characters'));
                 }
                 break;
@@ -673,165 +659,30 @@ class Controller extends BlockController implements FileTrackableInterface
         $this->requireAsset('alert-popup');
     }
 
-    /**
-     * @param \Concrete\Core\Error\ErrorList\ErrorList $errors
-     *
-     * @return array
-     */
-    private static function parsePopupArguments(array $args, $errors)
+    private function buildPopupData()
     {
-        $args += [
-            'popupWidth' => '',
-            'popupMinWidth' => '',
-            'popupMaxWidth' => '',
-            'popupHeight' => '',
-            'popupMinHeight' => '',
-            'popupMaxHeight' => '',
-            'popupBorderWidth' => '',
-            'popupBorderColor' => '',
-            'popupBackgroundColor' => '',
-            'popupBackdropColor' => '',
-            'popupAnimations' => '',
-            'popupAnimationDuration' => '',
-            'popupCssClass' => '',
-            'popupContent' => '',
-        ];
-        $normalized = [
-            'popupWidth' => trim((string) $args['popupWidth']),
-            'popupMinWidth' => trim((string) $args['popupMinWidth']),
-            'popupMaxWidth' => trim((string) $args['popupMaxWidth']),
-            'popupHeight' => trim((string) $args['popupHeight']),
-            'popupMinHeight' => trim((string) $args['popupMinHeight']),
-            'popupMaxHeight' => trim((string) $args['popupMaxHeight']),
-            'popupBorderWidth' => trim((string) $args['popupBorderWidth']),
-            'popupBorderColor' => trim((string) $args['popupBorderColor']),
-            'popupBackgroundColor' => trim((string) $args['popupBackgroundColor']),
-            'popupBackdropColor' => trim((string) $args['popupBackdropColor']),
-            'popupAnimations' => trim((string) $args['popupAnimations']),
-            'popupAnimationDuration' => (int) trim((string) $args['popupAnimationDuration']),
-            'popupCssClass' => preg_replace('/\s+/',trim((string) $args['popupCssClass']), ' '),
-            'popupContent' => LinkAbstractor::translateTo(trim((string) $args['popupContent'])),
-        ];
-        if ($normalized['popupWidth'] === '') {
-            $errors->add(t('Please specify the width of the popup'));
-        } elseif (!preg_match('/^(100|([1-9][0-9]?))vw$/', $normalized['popupWidth']) && !preg_match('/^[1-9]\d{0,9}px$/', $normalized['popupWidth'])) {
-            $errors->add(t('Invalid width of the popup'));
-        }
-        if ($normalized['popupMinWidth'] === '') {
-            $normalized['popupMinWidth'] = null;
-        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMinWidth'])) {
-            $errors->add(t('Invalid minimum width of the popup'));
-        } else {
-            $normalized['popupMinWidth'] = (int) $normalized['popupMinWidth'];
-        }
-        if ($normalized['popupMaxWidth'] === '') {
-            $normalized['popupMaxWidth'] = null;
-        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMaxWidth'])) {
-            $errors->add(t('Invalid maximum width of the popup'));
-        } else {
-            $normalized['popupMaxWidth'] = (int) $normalized['popupMaxWidth'];
-        }
-        if ($normalized['popupHeight'] !== '' && (!preg_match('/^(100|([1-9][0-9]?))vh$/', $normalized['popupHeight']) && !preg_match('/^[1-9]\d{0,9}px$/', $normalized['popupHeight']))) {
-            $errors->add(t('Invalid height of the popup'));
-        }
-        if ($normalized['popupMinHeight'] === '') {
-            $normalized['popupMinHeight'] = null;
-        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMinHeight'])) {
-            $errors->add(t('Invalid minimum height of the popup'));
-        } else {
-            $normalized['popupMinHeight'] = (int) $normalized['popupMinHeight'];
-        }
-        if ($normalized['popupMaxHeight'] === '') {
-            $normalized['popupMaxHeight'] = null;
-        } elseif (!preg_match('/^[1-9]\d{0,9}$/', $normalized['popupMaxHeight'])) {
-            $errors->add(t('Invalid maximum height of the popup'));
-        } else {
-            $normalized['popupMaxHeight'] = (int) $normalized['popupMaxHeight'];
-        }
-        if (!preg_match('/^\d{0,9}$/', $normalized['popupBorderWidth'])) {
-            $errors->add(t('Invalid width of the border of the popup'));
-        } else {
-            $normalized['popupBorderWidth'] = (int) $normalized['popupBorderWidth'];
-        }
-        if ($normalized['popupBorderWidth'] > 0 && $normalized['popupBorderColor'] === '') {
-            $errors->add(t('Please specify the width of the border of the popup'));
-        }
-        if (!preg_match('/^(' . static::RX_VALIDATE_CSS_CLASSLIST . ')?$/', $normalized['popupCssClass'])) {
-            $errors->add(t('The CSS classes of the popup contain invalid characters'));
-        }
-        if ($normalized['popupBackgroundColor'] === '') {
-            $errors->add(t('Please specify the background color of the popup'));
-        }
-        if ($normalized['popupAnimationDuration'] <= 0) {
-            $normalized['popupAnimationDuration'] = 600;
-        }
-        if ($normalized['popupContent'] === '') {
-            $errors->add(t('Please specify the content of the popup'));
+        $result = new PopupData();
+        $defaultBorderColor = $result->getBorderColor();
+        $result
+            ->setWidth($this->popupWidth)
+            ->setMinWidth($this->popupMinWidth)
+            ->setMaxWidth($this->popupMaxWidth)
+            ->setHeight($this->popupHeight)
+            ->setMinHeight($this->popupMinHeight)
+            ->setMaxHeight($this->popupMaxHeight)
+            ->setBorderWidth($this->popupBorderWidth)
+            ->setBorderColor($this->popupBorderColor)
+            ->setBackgroundColor($this->popupBackgroundColor)
+            ->setBackdropColor($this->popupBackdropColor)
+            ->setAnimations($this->popupAnimations)
+            ->setAnimationDuration($this->popupAnimationDuration)
+            ->setCssClass($this->popupCssClass)
+            ->setContent($this->popupContent)
+        ;
+        if ($result->getBorderColor() === '') {
+            $result->setBorderColor($defaultBorderColor);
         }
 
-        return $normalized;
-    }
-
-    /**
-     * @param object $data
-     * @param string $popupID
-     * @param string|null $popupContent
-     *
-     * @return string
-     */
-    private static function generatePopupHtml($data, $popupID, $popupContent = null)
-    {
-        $popupClasses = [];
-        $popupAttributes = [];
-        $popupStyles = [];
-        $popupContentStyles = [];
-        $popupClasses[] = 'ccm-alert-popup';
-        if ($data->popupAnimations) {
-            foreach (preg_split('/[^\w\-]/', $data->popupAnimations, -1, PREG_SPLIT_NO_EMPTY) as $animation) {
-                $popupClasses[] = "ccm-alert-popup-anim-{$animation}";
-            }
-            if ($data->popupAnimationDuration) {
-                $popupStyles[] = 'transition-duration: ' . $data->popupAnimationDuration  . 'ms';
-            }
-        }
-        if ($data->popupBackdropColor !== '') {
-            $popupAttributes[] = 'data-backdrop-color="' . h($data->popupBackdropColor) . '"';
-        }
-        if ($data->popupCssClass !== '') {
-            $popupClasses[] = h($data->popupCssClass);
-        }
-        if ($data->popupBorderWidth) {
-            $popupStyles[] = "border: solid {$data->popupBorderWidth}px {$data->popupBorderColor}";
-        }
-        $popupStyles[] = "background-color: {$data->popupBackgroundColor}";
-        $popupStyles[] = "width: {$data->popupWidth}";
-        if ($data->popupMinWidth) {
-            $popupStyles[] = "min-width: {$data->popupMinWidth}px";
-        }
-        if ($data->popupMaxWidth) {
-            $popupStyles[] = "max-width: {$data->popupMaxWidth}px";
-        }
-        if ($data->popupHeight) {
-            $popupContentStyles[] = "height: calc({$data->popupHeight} - 19px)";
-        }
-        if ($data->popupMinHeight) {
-            $popupContentStyles[] = "min-height: calc({$data->popupMinHeight}px - 19px)";
-        }
-        if ($data->popupMaxHeight) {
-            $popupContentStyles[] = "max-height: calc({$data->popupMaxHeight}px - 19px)";
-        }
-        if (!$data->popupHeight && !$data->popupMaxHeight) {
-            $popupContentStyles[] = 'max-height: calc(100vh - 80px)';
-        }
-        if ($popupContent === null) {
-            $popupContent = LinkAbstractor::translateFrom($data->popupContent);
-        }
-        $popupHtml = '<dialog id="' . h($popupID) . '" class="' . implode(' ', $popupClasses) . '" style="' . implode('; ', $popupStyles) . '"';
-        if ($popupAttributes !== []) {
-            $popupHtml .= ' ' . implode(' ', $popupAttributes);
-        }
-        $popupHtml .= '><div class="ccm-alert-popup-content" style="' . implode('; ', $popupContentStyles) . '">' . $popupContent . '</div></dialog>';
-
-        return $popupHtml;
+        return $result;
     }
 }

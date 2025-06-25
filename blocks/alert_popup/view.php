@@ -7,28 +7,18 @@ defined('C5_EXECUTE') or die('Access Denied.');
 /**
  * @var Concrete\Package\AlertPopup\Block\AlertPopup\Controller $controller
  * @var Concrete\Core\Block\View\BlockView $view
- *
  * @var Concrete\Core\Page\Page|null $c
  *
+ * @var Concrete\Package\AlertPopup\PopupData $popupData
+ * @var Concrete\Package\AlertPopup\Service $service
  * @var string $launcherType
  * @var string $launcherText
  * @var string $launcherCssClass
  * @var string $popupID
- * @var string $popupContent
- * @var string $popupCssClass
- * @var string $popupWidth
- * @var int|null $popupMinWidth
- * @var int|null $popupMaxWidth
- * @var string $popupHeight
- * @var int|null $popupMinHeight
- * @var int|null $popupMaxHeight
  *
- * @var Concrete\Core\Localization\Localization $localization
  * @var string[] $editMessages
  * @var string $launcherInnerHtml
  * @var string $launcherJS
- * @var string $popupHtml
- * 
  */
 
 if ($editMessages !== []) {
@@ -36,15 +26,13 @@ if ($editMessages !== []) {
         $c = Page::getCurrentPage();
     }
     if ($c && !$c->isError() && $c->isEditMode()) {
-        $localization->withContext(Localization::CONTEXT_UI, static function() use($editMessages) {
-            ?>
-            <div class="ccm-edit-mode-disabled-item"><?= implode('<br />', array_map('h', $editMessages)) ?></div>
-            <?php
-        });
+        ?>
+        <div class="ccm-edit-mode-disabled-item"><?= implode('<br />', array_map('h', $editMessages)) ?></div>
+        <?php
     }
 }
 
-echo $popupHtml;
+echo $service->generatePopupHtml($popupData, $popupID);
 
 if ($launcherInnerHtml !== '') {
     switch ($launcherType) {

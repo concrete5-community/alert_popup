@@ -41,7 +41,7 @@
     <field name="popupMaxHeight" type="integer" comment="Max height (in pixels) of the popup">
         <unsigned />
     </field>
-    <field name="popupBorderWidth" type="integer" comment="Width (in pixels) of the popup">
+    <field name="popupBorderWidth" type="integer" comment="Width (in pixels) of border of the popup">
         <unsigned />
         <notnull />
     </field>
@@ -57,7 +57,8 @@
     <field name="popupAnimations" type="text" comment="List of popup animations">
         <notnull />
     </field>
-    <field name="popupAnimationDuration" type="text" comment="Animations duration, in milliseconds">
+    <field name="popupAnimationDuration" type="integer" comment="Animations duration, in milliseconds">
+        <unsigned />
         <notnull />
     </field>
     <field name="popupCssClass" type="string" size="255" comment="CSS classes for the popup">

@@ -102,7 +102,7 @@ function createStyleElement(el: HTMLDialogElement, animated: boolean): HTMLStyle
     return style;
 }
 
-interface Options { 
+interface Options {
     closed?: () => void;
 };
 
