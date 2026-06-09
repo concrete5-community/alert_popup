@@ -64,13 +64,15 @@ ob_start();
 
         <div class="ccm-tab-content tab-pane active" role="tabpanel" id="<?= $tabsPrefix ?>alertpopup-editor-launcher">
             <div class="form-group">
-                <?= $form->label('launcherType', t('Item to be clicked to open the popup')) ?>
+                <?= $form->label('launcherType', t('How to open the popup?')) ?>
                 <?= $form->select(
                     'launcherType',
                     [
-                        $controller::LAUNCHERTYPE_BUTTON => t('Button'),
-                        $controller::LAUNCHERTYPE_LINK => t('Link'),
-                        $controller::LAUNCHERTYPE_NONE => tc('Launcher', 'None'),
+                        $controller::LAUNCHERTYPE_BUTTON => t('Click on a button'),
+                        $controller::LAUNCHERTYPE_LINK => t('Click on a link'),
+                        $controller::LAUNCHERTYPE_AUTO_ALWAYS => t('Automatic - For every page visit'),
+                        $controller::LAUNCHERTYPE_AUTO_ONCE_SESSION => t('Automatic - Once per session'),
+                        $controller::LAUNCHERTYPE_NONE => t('With custom code'),
                     ],
                     [
                         'v-model' => 'launcherType',
@@ -78,9 +80,14 @@ ob_start();
                     ]
                 ) ?>
             </div>
-            <div v-show="<?= h('launcherType !== ' . json_encode($controller::LAUNCHERTYPE_NONE)) ?>">
+            <div v-show="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK])) . '.includes(launcherType)' ?>">
                 <div class="form-group">
-                    <?= $form->label('launcherContentType', t('Content of the item to be clicked')) ?>
+                    <template v-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_BUTTON)) ?>">
+                        <?= $form->label('launcherContentType', t('Content of the button')) ?>
+                    </template>
+                    <template v-else-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_LINK)) ?>">
+                        <?= $form->label('launcherContentType', t('Content of the link')) ?>
+                    </template>
                     <?= $form->select(
                         'launcherContentType',
                         [
@@ -114,7 +121,12 @@ ob_start();
                     ) ?>
                 </div>
                 <div class="form-group">
-                    <?= $form->label('launcherCssClass', t('CSS classes of the launcher')) ?>
+                    <template v-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_BUTTON)) ?>">
+                        <?= $form->label('launcherCssClass', t('CSS classes of the button')) ?>
+                    </template>
+                    <template v-else-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_LINK)) ?>">
+                        <?= $form->label('launcherCssClass', t('CSS classes of the link')) ?>
+                    </template>
                     <?= $form->text(
                         'launcherCssClass',
                         '',
@@ -127,7 +139,7 @@ ob_start();
                     ) ?>
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" v-if="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK, $controller::LAUNCHERTYPE_NONE])) . '.includes(launcherType)' ?>">
                 <?= $form->label('popupID', t('ID of the popup')) ?>
                 <?= $form->text(
                     'popupID',
@@ -509,6 +521,7 @@ $template = preg_replace_callback(
     '#<script\b[^>]*>(.*?)</script>#is',
     static function (array $matches) use (&$scripts) {
         $scripts[] = trim($matches[1]);
+
         return '';
     },
     $template

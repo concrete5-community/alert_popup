@@ -28,7 +28,6 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var string $launcherInnerHtml
  * @var string $launcherJS
  * @var string $popupHtml
- * 
  */
 
 if ($editMessages !== []) {
@@ -36,7 +35,7 @@ if ($editMessages !== []) {
         $c = Page::getCurrentPage();
     }
     if ($c && !$c->isError() && $c->isEditMode()) {
-        $localization->withContext(Localization::CONTEXT_UI, static function() use($editMessages) {
+        $localization->withContext(Localization::CONTEXT_UI, static function () use ($editMessages) {
             ?>
             <div class="ccm-edit-mode-disabled-item"><?= implode('<br />', array_map('h', $editMessages)) ?></div>
             <?php
@@ -44,19 +43,48 @@ if ($editMessages !== []) {
     }
 }
 
+if ($popupHtml === '') {
+    return;
+}
+
 echo $popupHtml;
 
-if ($launcherInnerHtml !== '') {
-    switch ($launcherType) {
-        case $controller::LAUNCHERTYPE_BUTTON:
+switch ($launcherType) {
+    case $controller::LAUNCHERTYPE_BUTTON:
+        if ($launcherInnerHtml !== '') {
             ?>
             <button onclick="<?= h($launcherJS) ?>"<?= $launcherCssClass === '' ? '' : " class=\"{$launcherCssClass}\"" ?>><?= $launcherInnerHtml ?></button>
             <?php
-            break;
-        case $controller::LAUNCHERTYPE_LINK:
+        }
+        break;
+    case $controller::LAUNCHERTYPE_LINK:
+        if ($launcherInnerHtml !== '') {
             ?>
             <a href="#" onclick="<?= h($launcherJS) ?>"<?= $launcherCssClass === '' ? '' : " class=\"{$launcherCssClass}\"" ?>><?= $launcherInnerHtml ?></a>
             <?php
-            break;
-    }
+        }
+        break;
+    case $controller::LAUNCHERTYPE_AUTO_ALWAYS:
+    case $controller::LAUNCHERTYPE_AUTO_ONCE_SESSION:
+        if (!isset($c) || $c->isError()) {
+            $c = Page::getCurrentPage();
+        }
+        if (!$c || $c->isError() || !$c->isEditMode()) {
+            ?>
+            <script>
+            if (document.readyState === 'loading') {
+                document.addEventListener('readystatechange', () => {
+                    if (window.ccmAlertPopup) {
+                        window.ccmAlertPopup.show(<?= json_encode($popupID) ?>);
+                    }
+                });
+            } else {
+                if (window.ccmAlertPopup) {
+                    window.ccmAlertPopup.show(<?= json_encode($popupID) ?>);
+                }
+            }
+            </script>
+            <?php
+        }
+        break;
 }
