@@ -80,7 +80,7 @@ ob_start();
                     ]
                 ) ?>
             </div>
-            <div v-show="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK])) . '.includes(launcherType)' ?>">
+            <template v-show="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK])) . '.includes(launcherType)' ?>">
                 <div class="form-group">
                     <template v-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_BUTTON)) ?>">
                         <?= $form->label('launcherContentType', t('Content of the button')) ?>
@@ -138,7 +138,7 @@ ob_start();
                         ]
                     ) ?>
                 </div>
-            </div>
+            </template>
             <div class="form-group" v-if="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK, $controller::LAUNCHERTYPE_NONE])) . '.includes(launcherType)' ?>">
                 <?= $form->label('popupID', t('ID of the popup')) ?>
                 <?= $form->text(
@@ -582,6 +582,7 @@ function launchApp() {
         },
         mounted() {
             this.hookInvalidFields();
+            this.setMargins();
             var runScripts = function() {
                 <?= implode("\n", $scripts) ?>;
             };
@@ -644,6 +645,14 @@ function launchApp() {
                     return false;
                 }
             });
+        },
+        watch: {
+            launcherType() {
+                this.setMargins();
+            },
+            launcherContentType() {
+                this.setMargins();
+            },
         },
         computed: {
             popupWidth() {
@@ -775,6 +784,14 @@ function launchApp() {
                         popupContainer.remove();
                     },
                 });
+            },
+            setMargins() {
+                const form = document.querySelector('form#ccm-block-form');
+                if (form) {
+                    form.style.margin = '0';
+                    form.querySelectorAll(':scope .form-group').forEach(el => el.style.marginBottom = '');
+                    form.querySelectorAll(':scope .form-group:last-child').forEach(el => el.style.marginBottom = '0');
+                }
             },
         },
     });
