@@ -28,7 +28,6 @@ defined('C5_EXECUTE') or die('Access Denied.');
  * @var string $launcherInnerHtml
  * @var string $launcherJS
  * @var string $popupHtml
- * 
  */
 
 if ($editMessages !== []) {
@@ -36,7 +35,7 @@ if ($editMessages !== []) {
         $c = Page::getCurrentPage();
     }
     if ($c && !$c->isError() && $c->isEditMode()) {
-        $localization->withContext(Localization::CONTEXT_UI, static function() use($editMessages) {
+        $localization->withContext(Localization::CONTEXT_UI, static function () use ($editMessages) {
             ?>
             <div class="ccm-edit-mode-disabled-item"><?= implode('<br />', array_map('h', $editMessages)) ?></div>
             <?php

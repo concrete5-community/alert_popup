@@ -14,6 +14,8 @@ use Concrete\Core\Package\PackageService;
 use Concrete\Core\Statistics\UsageTracker\AggregateTracker;
 use Concrete\Core\Utility\Service\Xml;
 
+defined('C5_EXECUTE') or die('Access Denied.');
+
 class Controller extends BlockController implements FileTrackableInterface
 {
     const LAUNCHERTYPE_BUTTON = 'button';
@@ -354,7 +356,7 @@ class Controller extends BlockController implements FileTrackableInterface
     {
         $localization = $this->app->make(Localization::class);
         $this->set('localization', $localization);
-        $withUIContext = function(callable $callback) use ($localization) {
+        $withUIContext = static function (callable $callback) use ($localization) {
             $originalContext = $localization->getActiveContext();
             $localization->setActiveContext(Localization::CONTEXT_UI);
             try {
@@ -402,17 +404,17 @@ class Controller extends BlockController implements FileTrackableInterface
                     if ($launcherImageFileVersion) {
                         $launcherInnerHtml = '<img src="' . h($launcherImageFileVersion->getRelativePath()) . '" alt="' . h((string) $launcherImageFileVersion->getTitle()) . 'loading="lazy" />';
                     } else {
-                        $editMessages[] = $withUIContext(static function() { return t('Unable to find the configured launcher image'); });
+                        $editMessages[] = $withUIContext(static function () { return t('Unable to find the configured launcher image'); });
                     }
                 } else {
-                    $editMessages[] = $withUIContext(static function() { return t('Unable to determine the content of the launcher'); });
+                    $editMessages[] = $withUIContext(static function () { return t('Unable to determine the content of the launcher'); });
                 }
                 break;
             case self::LAUNCHERTYPE_AUTO_ALWAYS:
-                $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup displayed on every page visit'); });
+                $editMessages[] = $withUIContext(static function () { return t('Alert Popup displayed on every page visit'); });
                 break;
             case self::LAUNCHERTYPE_AUTO_ONCE_SESSION:
-                $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup displayed once per session'); });
+                $editMessages[] = $withUIContext(static function () { return t('Alert Popup displayed once per session'); });
                 $session = $this->app->make('session');
                 $sessionKey = 'alertpupup-block-' . $this->bID;
                 if ($session->get($sessionKey) === 'displayed') {
@@ -423,7 +425,7 @@ class Controller extends BlockController implements FileTrackableInterface
                 }
                 break;
             default:
-                $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup with ID %s launched via code', $popupID); });
+                $editMessages[] = $withUIContext(static function () use ($popupID) { return t('Alert Popup with ID %s launched via code', $popupID); });
                 break;
         }
         if ($popupHtml === null) {
@@ -554,8 +556,6 @@ class Controller extends BlockController implements FileTrackableInterface
     }
 
     /**
-     * @param array $args
-     *
      * @return \Concrete\Core\Error\Error|\Concrete\Core\Error\ErrorList\ErrorList|array
      */
     private function normalizeArgs(array $args)
@@ -679,7 +679,7 @@ class Controller extends BlockController implements FileTrackableInterface
                     'combine' => true,
                 ],
                 'alert_popup'
-                );
+            );
             $assetList->register(
                 // $assetType
                 'javascript',
@@ -693,7 +693,7 @@ class Controller extends BlockController implements FileTrackableInterface
                     'combine' => true,
                 ],
                 'alert_popup'
-                );
+            );
             $assetList->registerGroup('alert-popup', [
                 ['css', 'alert-popup'],
                 ['javascript', 'alert-popup'],
@@ -738,7 +738,7 @@ class Controller extends BlockController implements FileTrackableInterface
             'popupBackdropColor' => trim((string) $args['popupBackdropColor']),
             'popupAnimations' => trim((string) $args['popupAnimations']),
             'popupAnimationDuration' => (int) trim((string) $args['popupAnimationDuration']),
-            'popupCssClass' => preg_replace('/\s+/',trim((string) $args['popupCssClass']), ' '),
+            'popupCssClass' => preg_replace('/\s+/', trim((string) $args['popupCssClass']), ' '),
             'popupContent' => LinkAbstractor::translateTo(trim((string) $args['popupContent'])),
         ];
         if ($normalized['popupWidth'] === '') {
@@ -820,7 +820,7 @@ class Controller extends BlockController implements FileTrackableInterface
                 $popupClasses[] = "ccm-alert-popup-anim-{$animation}";
             }
             if ($data->popupAnimationDuration) {
-                $popupStyles[] = 'transition-duration: ' . $data->popupAnimationDuration  . 'ms';
+                $popupStyles[] = 'transition-duration: ' . $data->popupAnimationDuration . 'ms';
             }
         }
         if ($data->popupBackdropColor !== '') {

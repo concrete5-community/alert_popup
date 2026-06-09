@@ -521,6 +521,7 @@ $template = preg_replace_callback(
     '#<script\b[^>]*>(.*?)</script>#is',
     static function (array $matches) use (&$scripts) {
         $scripts[] = trim($matches[1]);
+
         return '';
     },
     $template
