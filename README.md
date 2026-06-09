@@ -4,7 +4,13 @@
 
 Alert Popup is a ConcreteCMS/concrete5 package that allows you to display rich text in a modal dialog.
 
-The dialog can be opened by a button or a link (you can specify text or an image for them), as well as via a very simple JavaScript line.
+The dialog can be opened:
+
+- by a button or a link (you can specify text or an image for them)
+- always, in every page visit
+- always, once per session
+- for every page visit
+- with a very simple JavaScript line
 
 You can control these aspects of the modal:
 
