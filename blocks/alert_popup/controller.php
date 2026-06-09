@@ -16,11 +16,15 @@ use Concrete\Core\Utility\Service\Xml;
 
 class Controller extends BlockController implements FileTrackableInterface
 {
-    const LAUNCHERTYPE_NONE = 'none';
+    const LAUNCHERTYPE_BUTTON = 'button';
 
     const LAUNCHERTYPE_LINK = 'link';
 
-    const LAUNCHERTYPE_BUTTON = 'button';
+    const LAUNCHERTYPE_AUTO_ALWAYS = 'auto-always';
+
+    const LAUNCHERTYPE_AUTO_ONCE_SESSION = 'auto-session';
+
+    const LAUNCHERTYPE_NONE = 'none';
 
     /**
      * @private
@@ -368,7 +372,6 @@ class Controller extends BlockController implements FileTrackableInterface
         $popupContent = LinkAbstractor::translateFrom($this->popupContent);
         $this->set('popupContent', $popupContent);
         $editMessages = [];
-        $launcherInnerHtml = '';
         $popupID = $this->popupID;
         if ($popupID === '') {
             $bID = null;
@@ -385,6 +388,9 @@ class Controller extends BlockController implements FileTrackableInterface
             $popupID = "alertpopup-{$bID}";
         }
         $this->set('popupID', $popupID);
+        $launcherInnerHtml = '';
+        $launcherJS = 'if (window.ccmAlertPopup) window.ccmAlertPopup.show(' . json_encode($popupID) . '); return false';
+        $popupHtml = null;
         switch ($this->launcherType) {
             case self::LAUNCHERTYPE_BUTTON:
             case self::LAUNCHERTYPE_LINK:
@@ -402,13 +408,30 @@ class Controller extends BlockController implements FileTrackableInterface
                     $editMessages[] = $withUIContext(static function() { return t('Unable to determine the content of the launcher'); });
                 }
                 break;
+            case self::LAUNCHERTYPE_AUTO_ALWAYS:
+                $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup displayed on every page visit'); });
+                break;
+            case self::LAUNCHERTYPE_AUTO_ONCE_SESSION:
+                $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup displayed once per session'); });
+                $session = $this->app->make('session');
+                $sessionKey = 'alertpupup-block-' . $this->bID;
+                if ($session->get($sessionKey) === 'displayed') {
+                    $popupHtml = '';
+                    $launcherJS = '';
+                } else {
+                    $session->set($sessionKey, 'displayed');
+                }
+                break;
             default:
                 $editMessages[] = $withUIContext(static function() use ($popupID) { return t('Alert Popup with ID %s launched via code', $popupID); });
                 break;
         }
+        if ($popupHtml === null) {
+            $popupHtml = static::generatePopupHtml($this, $popupID, $popupContent);
+        }
         $this->set('launcherInnerHtml', $launcherInnerHtml);
-        $this->set('launcherJS', 'if (window.ccmAlertPopup) window.ccmAlertPopup.show(' . json_encode($popupID) . '); return false');
-        $this->set('popupHtml', static::generatePopupHtml($this, $popupID, $popupContent));
+        $this->set('launcherJS', $launcherJS);
+        $this->set('popupHtml', $popupHtml);
         $this->set('editMessages', $editMessages);
     }
 
@@ -551,11 +574,12 @@ class Controller extends BlockController implements FileTrackableInterface
             'launcherText' => '',
             'launcherImage' => null,
             'launcherCssClass' => '',
-            'popupID' => trim((string) $args['popupID']),
+            'popupID' => '',
         ] + static::parsePopupArguments($args, $errors);
         switch ($normalized['launcherType']) {
             case self::LAUNCHERTYPE_LINK:
             case self::LAUNCHERTYPE_BUTTON:
+                $normalized['popupID'] = trim((string) $args['popupID']);
                 if ($args['launcherContentType'] !== 'image') {
                     $normalized['launcherText'] = trim((string) $args['launcherText']);
                     if ($args['launcherContentType'] === 'text' && $normalized['launcherText'] === '') {
@@ -583,7 +607,12 @@ class Controller extends BlockController implements FileTrackableInterface
                     $errors->add(t('The CSS classes of the launcher contain invalid characters'));
                 }
                 break;
+            case self::LAUNCHERTYPE_AUTO_ALWAYS:
+            case self::LAUNCHERTYPE_AUTO_ONCE_SESSION:
+                $normalized['popupID'] = '';
+                break;
             case self::LAUNCHERTYPE_NONE:
+                $normalized['popupID'] = trim((string) $args['popupID']);
                 if ($normalized['popupID'] === '') {
                     $errors->add(t("The ID of the popup must be specified if there's no launcher"));
                 }

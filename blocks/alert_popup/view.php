@@ -44,19 +44,48 @@ if ($editMessages !== []) {
     }
 }
 
+if ($popupHtml === '') {
+    return;
+}
+
 echo $popupHtml;
 
-if ($launcherInnerHtml !== '') {
-    switch ($launcherType) {
-        case $controller::LAUNCHERTYPE_BUTTON:
+switch ($launcherType) {
+    case $controller::LAUNCHERTYPE_BUTTON:
+        if ($launcherInnerHtml !== '') {
             ?>
             <button onclick="<?= h($launcherJS) ?>"<?= $launcherCssClass === '' ? '' : " class=\"{$launcherCssClass}\"" ?>><?= $launcherInnerHtml ?></button>
             <?php
-            break;
-        case $controller::LAUNCHERTYPE_LINK:
+        }
+        break;
+    case $controller::LAUNCHERTYPE_LINK:
+        if ($launcherInnerHtml !== '') {
             ?>
             <a href="#" onclick="<?= h($launcherJS) ?>"<?= $launcherCssClass === '' ? '' : " class=\"{$launcherCssClass}\"" ?>><?= $launcherInnerHtml ?></a>
             <?php
-            break;
-    }
+        }
+        break;
+    case $controller::LAUNCHERTYPE_AUTO_ALWAYS:
+    case $controller::LAUNCHERTYPE_AUTO_ONCE_SESSION:
+        if (!isset($c) || $c->isError()) {
+            $c = Page::getCurrentPage();
+        }
+        if (!$c || $c->isError() || !$c->isEditMode()) {
+            ?>
+            <script>
+            if (document.readyState === 'loading') {
+                document.addEventListener('readystatechange', () => {
+                    if (window.ccmAlertPopup) {
+                        window.ccmAlertPopup.show(<?= json_encode($popupID) ?>);
+                    }
+                });
+            } else {
+                if (window.ccmAlertPopup) {
+                    window.ccmAlertPopup.show(<?= json_encode($popupID) ?>);
+                }
+            }
+            </script>
+            <?php
+        }
+        break;
 }
