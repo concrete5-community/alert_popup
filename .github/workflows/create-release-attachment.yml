@@ -1,13 +1,13 @@
-name: Attach ZIP to GitHub Release
+name: Prepare GitHub Release
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - '*'
 
 jobs:
   attach-zip:
-    name: Attach ZIP to release
+    name: Prepare GitHub Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,7 +23,7 @@ jobs:
         name: Checkout
         uses: actions/checkout@v6
       -
-        name: Create and attach ZIP
+        name: Create draft release
         uses: concrete5-community/gh-package-release-attach@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
