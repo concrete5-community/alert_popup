@@ -80,8 +80,8 @@ ob_start();
                     ]
                 ) ?>
             </div>
-            <template v-show="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK])) . '.includes(launcherType)' ?>">
-                <div class="form-group">
+            <div v-show="showLauncherStuff" class="form-group">
+                <template v-if="showLauncherStuff">
                     <template v-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_BUTTON)) ?>">
                         <?= $form->label('launcherContentType', t('Content of the button')) ?>
                     </template>
@@ -99,8 +99,10 @@ ob_start();
                             'required' => 'required',
                         ]
                     ) ?>
-                </div>
-                <div v-if="launcherContentType === 'text'" class="form-group">
+                </template>
+            </div>
+            <div v-show="showLauncherStuff && launcherContentType === 'text'" class="form-group">
+                <template v-if="showLauncherStuff && launcherContentType === 'text'">
                     <?= $form->label('launcherText', t('Text')) ?>
                     <?= $form->text(
                         'launcherText',
@@ -111,16 +113,18 @@ ob_start();
                             'required' => 'required',
                         ]
                     ) ?>
-                </div>
-                <div v-show="launcherContentType === 'image'" class="form-group">
-                    <?= $al->image(
-                        'ccm-alertpopup-editor-image-file',
-                        'launcherImage',
-                        t('Choose Image'),
-                        $launcherImage
-                    ) ?>
-                </div>
-                <div class="form-group">
+                </template>
+            </div>
+            <div v-show="showLauncherStuff && launcherContentType === 'image'" class="form-group">
+                <?= $al->image(
+                    'ccm-alertpopup-editor-image-file',
+                    'launcherImage',
+                    t('Choose Image'),
+                    $launcherImage
+                ) ?>
+            </div>
+            <div v-show="showLauncherStuff" class="form-group">
+                <template v-if="showLauncherStuff">
                     <template v-if="launcherType === <?= h(json_encode($controller::LAUNCHERTYPE_BUTTON)) ?>">
                         <?= $form->label('launcherCssClass', t('CSS classes of the button')) ?>
                     </template>
@@ -137,28 +141,30 @@ ob_start();
                             'style' => $monoStyle,
                         ]
                     ) ?>
-                </div>
-            </template>
-            <div class="form-group" v-if="<?= h(json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK, $controller::LAUNCHERTYPE_NONE])) . '.includes(launcherType)' ?>">
-                <?= $form->label('popupID', t('ID of the popup')) ?>
-                <?= $form->text(
-                    'popupID',
-                    '',
-                    [
-                        'v-model.trim' => 'popupID',
-                        'maxlength' => '255',
-                        'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)),
-                        'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*',
-                        'style' => $monoStyle,
-                    ]
-                ) ?>
-                <div class="small text-muted">
-                    <?= t("Required if the type of the launcher is set to '%s'", tc('Launcher', 'None')) ?>
-                </div>
-                <div class="small text-muted" v-bind:style="{visibility: popupID === '' ? 'hidden' : 'visible'}">
-                    <?= t('Example:') ?><br />
-                    <code>&lt;a href=&quot;#&quot; onclick=&quot;ccmAlertPopup.show('{{ popupID }}'); return false&quot;&gt;<?= t('Show Popup') ?>&lt;/a&gt;</code>
-                </div>
+                </template>
+            </div>
+            <div v-show="askPopupID" class="form-group">
+                <template v-if="askPopupID">
+                    <?= $form->label('popupID', t('ID of the popup')) ?>
+                    <?= $form->text(
+                        'popupID',
+                        '',
+                        [
+                            'v-model.trim' => 'popupID',
+                            'maxlength' => '255',
+                            'v-bind:required' => h('launcherType === ' . json_encode($controller::LAUNCHERTYPE_NONE)),
+                            'pattern' => '[A-Za-z_][A-Za-z0-9_\-]*',
+                            'style' => $monoStyle,
+                        ]
+                    ) ?>
+                    <div class="small text-muted">
+                        <?= t("Required if the type of the launcher is set to '%s'", tc('Launcher', 'None')) ?>
+                    </div>
+                    <div class="small text-muted" v-bind:style="{visibility: popupID === '' ? 'hidden' : 'visible'}">
+                        <?= t('Example:') ?><br />
+                        <code>&lt;a href=&quot;#&quot; onclick=&quot;ccmAlertPopup.show('{{ popupID }}'); return false&quot;&gt;<?= t('Show Popup') ?>&lt;/a&gt;</code>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -235,7 +241,7 @@ ob_start();
             </div>
             <div class="row">
                 <div class="col-6 col-sm-6">
-                    <div class="form-group" v-if="popupWidthUnit === 'vw'">
+                    <div v-if="popupWidthUnit === 'vw'" class="form-group">
                         <?= $form->label('popupMinWidth', t('Minimum width')) ?>
                         <div class="input-group input-group-sm">
                             <?= $form->number(
@@ -264,7 +270,7 @@ ob_start();
                     </div>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <div class="form-group" v-if="!/^\d+px$/.test(popupHeight)">
+                    <div v-if="!/^\d+px$/.test(popupHeight)" class="form-group">
                         <?= $form->label('popupMinHeight', t('Minimum height')) ?>
                         <div class="input-group input-group-sm">
                             <?= $form->number(
@@ -295,7 +301,7 @@ ob_start();
             </div>
             <div class="row">
                 <div class="col-6 col-sm-6">
-                    <div class="form-group" v-if="popupWidthUnit === 'vw'">
+                    <div v-if="popupWidthUnit === 'vw'" class="form-group">
                         <?= $form->label('popupMaxWidth', t('Maximum width')) ?>
                         <div class="input-group input-group-sm">
                             <?= $form->number(
@@ -324,7 +330,7 @@ ob_start();
                     </div>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <div class="form-group" v-if="!/^\d+px$/.test(popupHeight)">
+                    <div v-if="!/^\d+px$/.test(popupHeight)" class="form-group">
                         <?= $form->label('popupMaxHeight', t('Maximum height')) ?>
                         <div class="input-group input-group-sm">
                             <?= $form->number(
@@ -384,7 +390,7 @@ ob_start();
                     </div>
                 </div>
                 <div class="col-6 col-sm-6">
-                    <div class="form-group" v-if="popupBorderWidth && popupBorderWidth !== '0'">
+                    <div v-if="popupBorderWidth && popupBorderWidth !== '0'" class="form-group">
                         <?= $form->label('popupBorderColor', t('Border color')) ?>
                         <?= $form->color(
                             'popupBorderColor',
@@ -581,9 +587,12 @@ function launchApp() {
             ]) ?>;
         },
         mounted() {
+            const form = document.querySelector('form#ccm-block-form');
+            if (form) {
+                form.style.margin = '0';
+            }
             this.hookInvalidFields();
-            this.setMargins();
-            var runScripts = function() {
+            const runScripts = () => {
                 <?= implode("\n", $scripts) ?>;
             };
             <?php
@@ -646,15 +655,13 @@ function launchApp() {
                 }
             });
         },
-        watch: {
-            launcherType() {
-                this.setMargins();
-            },
-            launcherContentType() {
-                this.setMargins();
-            },
-        },
         computed: {
+            showLauncherStuff() {
+                return <?= json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK]) ?>.includes(this.launcherType);
+            },
+            askPopupID() {
+                return <?= json_encode([$controller::LAUNCHERTYPE_BUTTON, $controller::LAUNCHERTYPE_LINK, $controller::LAUNCHERTYPE_NONE]) ?>.includes(this.launcherType);
+            },
             popupWidth() {
                 return this.popupWidthValue ? `${this.popupWidthValue}${this.popupWidthUnit}` : '';
             },
@@ -784,14 +791,6 @@ function launchApp() {
                         popupContainer.remove();
                     },
                 });
-            },
-            setMargins() {
-                const form = document.querySelector('form#ccm-block-form');
-                if (form) {
-                    form.style.margin = '0';
-                    form.querySelectorAll(':scope .form-group').forEach(el => el.style.marginBottom = '');
-                    form.querySelectorAll(':scope .form-group:last-child').forEach(el => el.style.marginBottom = '0');
-                }
             },
         },
     });
